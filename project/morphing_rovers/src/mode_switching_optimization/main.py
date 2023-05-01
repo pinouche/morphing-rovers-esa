@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 
 from utils import load_chromosome
-from optimization import OptimizeNetworkSupervised
+from optimization import OptimizeNetworkSupervisedSwitching
 from morphing_udp_modified import MAX_TIME
 
 
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     options = options.parse_args()
 
     chromosome = load_chromosome()
-    network_trainer = OptimizeNetworkSupervised(options, chromosome)
+    network_trainer = OptimizeNetworkSupervisedSwitching(options, chromosome)
     network_trainer.train(MAX_TIME)
 
 

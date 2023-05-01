@@ -5,12 +5,13 @@ import os
 import pickle
 
 from torch.optim import Adam
+from torch.nn.functional import binary_cross_entropy
 
-from morphing_udp_modified import morphing_rover_UDP, Rover, MAX_DA
+from morphing_udp_modified import morphing_rover_UDP, Rover
 from morphing_rovers.src.utils import Config
 
 
-class OptimizeNetworkSupervised:
+class OptimizeNetworkSupervisedSwitching:
 
     def __init__(self, options, chromosome):
         self.chromosome = chromosome
@@ -62,9 +63,9 @@ class OptimizeNetworkSupervised:
             target = data[-1]
 
             if target:
-                target = 1
+                target = 10
             else:
-                target = -1
+                target = -10
 
             self.rover_view.append(np.squeeze(data[0]))
             self.rover_state.append(np.squeeze(data[1]))
@@ -76,8 +77,16 @@ class OptimizeNetworkSupervised:
         self.optimiser = Adam(list(self.udp.rover.Control.parameters()),
                               self.config.learning_rate_supervised_learning_mode_switching)
 
+    def accuracy_metric(self, prediction, target):
+        prediction[prediction >= 0] = 10
+        prediction[prediction < 0] = -10
+        accuracy = np.sum(prediction.numpy(force=True) == np.array(target))/len(target)
+
+        return accuracy
+
     def loss_function(self, prediction, target):
-        loss = (prediction - torch.tensor(target)) ** 2
+        loss = torch.abs((prediction - torch.tensor(target)))
+        # loss = binary_cross_entropy(prediction, torch.tensor(target))
         return loss
 
     def train_step(self):
@@ -86,12 +95,13 @@ class OptimizeNetworkSupervised:
                                                       torch.from_numpy(np.stack(self.latent_state)))
 
         loss = self.loss_function(switching_mode, self.data_y).mean()
+        accuracy = self.accuracy_metric(switching_mode, self.data_y)
 
         self.optimiser.zero_grad()
         loss.backward()
         self.optimiser.step()
 
-        return loss.item()
+        return loss.item(), accuracy
 
     def train(self, n_iter):
         self.reset_data()
@@ -99,8 +109,9 @@ class OptimizeNetworkSupervised:
         self.load_data(n_iter)
 
         for iteration_step in range(self.config.n_iter_supervised_learning_mode_switching):
-            loss = self.train_step()
+            loss, accuracy = self.train_step()
 
             if iteration_step % 10 == 0:
                 print(f"Computing for iteration number {iteration_step+1}")
                 print(f"The average loss is: {loss}")
+                print(f"The accuracy is: {accuracy}")
