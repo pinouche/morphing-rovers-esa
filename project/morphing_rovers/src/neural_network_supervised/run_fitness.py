@@ -33,25 +33,42 @@ if __name__ == "__main__":
 
     # updated chromosome
     masks = np.array([m.numpy(force=True) for m in masks_tensors]).flatten()
-    chromosome = np.concatenate((masks, control.chromosome))  # updated chromosome network_trainer.udp.rover.Control.chromosome
+    chromosome = np.concatenate((masks, control.chromosome))
     chromosome[628] = 10000
 
-    for n_iter in range(1, MAX_TIME+1):
-        print(f"Optimizing network for the {n_iter} first rover's steps")
+    for i in range(10):
+        print(f"COMPUTING FOR ITERATION NUMBER {i}")
+        for n_iter in range(1, MAX_TIME+1):
+            print(f"Optimizing network for the {n_iter} first rover's steps")
 
-        network_trainer = OptimizeNetworkSupervised(options, chromosome)
-        network_trainer.train(n_iter)
-        cluster_data = network_trainer.udp.rover.cluster_data
+            network_trainer = OptimizeNetworkSupervised(options, chromosome)
+            network_trainer.train(n_iter)
+            cluster_data = network_trainer.udp.rover.cluster_data
 
-        print("AVERAGE ROVER'S SPEED: ", np.mean(network_trainer.udp.rover.overall_speed))
+            print("AVERAGE ROVER'S SPEED: ", np.mean(network_trainer.udp.rover.overall_speed))
 
-        chromosome = np.concatenate((masks, network_trainer.udp.rover.Control.chromosome))  # updated chromosome
+            chromosome = np.concatenate((masks, network_trainer.udp.rover.Control.chromosome))  # updated chromosome
+            chromosome[628] = 10000
+
+        # compute fitness
+        fitness = udp.fitness(chromosome)
+        print("round number", i, "fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
+
+        # optimize modes
+        mode_trainer = OptimizeMask(options, masks_tensors, cluster_trainer_output)
+        mode_trainer.train()
+        average_speed = mode_trainer.weighted_average
+        masks_tensors = mode_trainer.optimized_masks
+        # adjust clusters and optimize masks again iteratively
+        masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed)
+
+        # updated chromosome
+        masks = np.array([m.numpy(force=True) for m in masks_tensors]).flatten()
+        chromosome = np.concatenate((masks, control.chromosome))
         chromosome[628] = 10000
 
     pickle.dump(chromosome, open("chromosome.p", "wb"))
 
-    fitness = udp.fitness(chromosome)
-    print("fitness ", fitness, "overall speed", np.mean(udp.rover.overall_speed))
     udp.plot(chromosome, plot_modes=True, plot_mode_efficiency=True)
     udp.pretty(chromosome)
 

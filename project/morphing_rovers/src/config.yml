@@ -15,7 +15,7 @@ n_iter_mask_optimization: 1000
 learning_rate_mask_optimization: 0.02
 
 # for supervised learning using the angle
-n_iter_supervised_learning: 10
+n_iter_supervised_learning: 1
 learning_rate_supervised_learning: 0.001
 
 # for supervised learning using the mode switch
