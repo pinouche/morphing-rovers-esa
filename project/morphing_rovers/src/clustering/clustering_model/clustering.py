@@ -7,7 +7,7 @@ from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans
 
-from morphing_rovers.src.utils import Config
+from morphing_rovers.utils import Config
 from morphing_rovers.src.clustering.utils import load_checkpoint
 
 DATA_PATH_TRAIN = "../autoencoder/training_dataset/train_mode_view_dataset.p"

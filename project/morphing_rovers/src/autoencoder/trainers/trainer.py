@@ -7,7 +7,7 @@ import yaml
 import torch
 from tqdm import tqdm
 
-from morphing_rovers.src.utils import Config
+from morphing_rovers.utils import Config
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"

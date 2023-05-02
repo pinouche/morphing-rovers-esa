@@ -8,7 +8,7 @@ from morphing_rovers.src.clustering.clustering_model.clustering import Clusterin
 from morphing_rovers.src.mode_optimization.optimization.optimization import OptimizeMask
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
-from utils import init_modes, adjust_clusters_and_modes
+from utils import init_modes, adjust_clusters_and_modes, update_chromosome_with_mask
 
 PATH_CONTROL = "./neural_network_supervised/optimized_control.p"
 PATH_MASKS = "./mode_optimization/experiments/optimized_masks.p"
@@ -42,16 +42,13 @@ if __name__ == "__main__":
     # initial run to get the dataset for clustering
     masks_tensors, cluster_trainer_output, best_average_speed = init_modes(options, chromosome)
     print(f"The weighted average speed is: {best_average_speed} and the cluster sizes are {np.unique(cluster_trainer_output[1], return_counts=True)}")
-    pickle.dump(masks_tensors, open("../mode_optimization/experiments/optimized_masks.p", "wb"))
 
     if len(np.unique(cluster_trainer_output[1])) != 1:
         # adjust clusters and optimize masks again iteratively
         masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed)
 
     # updated chromosome
-    masks = np.array([m.numpy(force=True) for m in masks_tensors]).flatten()
-    chromosome = np.concatenate((masks, control.chromosome))
-    chromosome[628] = 10000
+    chromosome = update_chromosome_with_mask(masks_tensors, control.chromosome, always_switch=True)
 
     fitness = udp.fitness(chromosome)
     print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
@@ -89,9 +86,7 @@ if __name__ == "__main__":
             masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed)
 
         # updated chromosome
-        masks = np.array([m.numpy(force=True) for m in masks_tensors]).flatten()
-        chromosome = np.concatenate((masks, control.chromosome))
-        chromosome[628] = 10000
+        chromosome = update_chromosome_with_mask(masks_tensors, control.chromosome, always_switch=True)
 
         pickle.dump(chromosome, open(f"chromosome_iteration_{i}.p", "wb"))
 

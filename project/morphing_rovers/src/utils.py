@@ -1,4 +1,3 @@
-from argparse import Namespace
 import numpy as np
 import torch
 
@@ -7,15 +6,6 @@ from morphing_rovers.src.mode_optimization.optimization.optimization import Opti
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 from morphing_rovers.morphing_udp import MAX_TIME
 from morphing_rovers.src.mode_optimization.utils import velocity_function
-
-
-class Config(Namespace):
-    def __init__(self, config):
-        for key, value in config.items():
-            if isinstance(value, (list, tuple)):
-                setattr(self, key, [Config(x) if isinstance(x, dict) else x for x in value])
-            else:
-                setattr(self, key, Config(value) if isinstance(value, dict) else value)
 
 
 def get_best_mode(mode_view, masks_list):
@@ -85,3 +75,14 @@ def adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, be
             break
 
     return masks_tensors
+
+
+def update_chromosome_with_mask(masks_tensors, chromosome, always_switch=True):
+    # updated chromosome
+    masks = np.array([m.numpy(force=True) for m in masks_tensors]).flatten()
+    chromosome = np.concatenate((masks, chromosome))
+
+    if always_switch:
+        chromosome[628] = 10000
+
+    return chromosome
