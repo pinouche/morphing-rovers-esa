@@ -25,8 +25,9 @@ if __name__ == "__main__":
     chromosome[628] = 10000  # set switching mode always to be on
 
     # initial run to get the dataset for clustering
-    masks_tensors, cluster_trainer_output, best_average_speed = init_modes(options, masks_tensors, chromosome)
+    masks_tensors, cluster_trainer_output, best_average_speed = init_modes(options, chromosome)
     print(f"The weighted average speed is: {best_average_speed} and the cluster sizes are {np.unique(cluster_trainer_output[1], return_counts=True)}")
+    pickle.dump(masks_tensors, open("../mode_optimization/experiments/optimized_masks.p", "wb"))
 
     if len(np.unique(cluster_trainer_output[1])) != 1:
         # adjust clusters and optimize masks again iteratively

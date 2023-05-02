@@ -838,6 +838,7 @@ class morphing_rover_UDP:
 
                         dict_mode[m_string] += velocity
 
+                print("VELOCITIES COMPARISON", dict_mode["best_mode"], dict_mode["current_mode"])
                 self.rover.training_data[-1].append(dict_mode["best_mode"] > dict_mode["current_mode"])
 
             # Check if the rover went out of bounds, if so return the maximum time and end the scenario

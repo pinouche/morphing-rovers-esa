@@ -3,9 +3,8 @@ import yaml
 import numpy as np
 
 from torch.optim import Adam
-import torch.nn as nn
 
-from morphing_udp_modified import morphing_rover_UDP, Rover, MAX_DA
+from morphing_rovers.src.neural_network_supervised.morphing_udp_modified import morphing_rover_UDP, Rover, MAX_DA
 from morphing_rovers.src.utils import Config
 
 

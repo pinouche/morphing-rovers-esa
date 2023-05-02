@@ -50,8 +50,10 @@ class OptimizeMask:
     def initialize_solution(self):
         if self.solution_list is None:
             self.solution_list = []
-            for _ in range(4):
+            for _ in range(self.config.n_clusters):
                 self.solution_list.append(torch.rand(11, 11, requires_grad=True))
+        else:
+            self.config.n_clusters = len(self.solution_list)
 
     def create_optimizer(self):
         self.optimiser = Adam([self.solution], self.config.learning_rate_mask_optimization)
@@ -70,24 +72,26 @@ class OptimizeMask:
         weighted_average_velocity = 0
         self.prepare_data()
         self.initialize_solution()
-        for cluster_id in range(4):
 
-            self.solution = self.solution_list[cluster_id]
+        for i, cluster_id in enumerate(np.unique(self.cluster_id)):
+
+            self.solution = self.solution_list[i]
             self.create_optimizer()
 
             data_cluster = self.mode_view_data[self.cluster_id == cluster_id]
 
-            if data_cluster.shape[0] > 0:
-                # print(f"Training for cluster {cluster_id} with {data_cluster.shape[0]} sample.")
-                for iteration_step in range(self.config.n_iter_mask_optimization):
-                    solution_expand = self.solution.repeat(data_cluster.shape[0], 1, 1)
-                    self.velocity = self.train_step(solution_expand, data_cluster)
+            # if data_cluster.shape[0] > 0:
+            # print(f"Training for cluster {cluster_id} with {data_cluster.shape[0]} sample.")
+            for iteration_step in range(self.config.n_iter_mask_optimization):
+                solution_expand = self.solution.repeat(data_cluster.shape[0], 1, 1)
+                self.velocity = self.train_step(solution_expand, data_cluster)
 
-                    # print("the current average velocity over the all cluster is: {:.3f}".format(self.velocity))
+                # print("the current average velocity over the all cluster is: {:.3f}".format(self.velocity))
 
-                weighted_average_velocity += self.velocity*data_cluster.shape[0]
-
+            weighted_average_velocity += self.velocity*data_cluster.shape[0]
             self.optimized_masks.append(self.solution)
+
+        self.optimized_masks = self.optimized_masks * int(4/self.config.n_clusters)
 
         self.weighted_average = weighted_average_velocity/len(self.data[0])
         # pickle.dump(self.optimized_masks, open("./experiments/optimized_masks.p", "wb"))
