@@ -1,9 +1,13 @@
 from argparse import Namespace
+import numpy as np
+import torch
 
 from morphing_rovers.src.clustering.clustering_model.clustering import ClusteringTerrain
 from morphing_rovers.src.mode_optimization.optimization.optimization import OptimizeMask
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 from morphing_rovers.morphing_udp import MAX_TIME
+from morphing_rovers.src.mode_optimization.utils import velocity_function
+
 
 class Config(Namespace):
     def __init__(self, config):
@@ -12,6 +16,17 @@ class Config(Namespace):
                 setattr(self, key, [Config(x) if isinstance(x, dict) else x for x in value])
             else:
                 setattr(self, key, Config(value) if isinstance(value, dict) else value)
+
+
+def get_best_mode(mode_view, masks_list):
+
+    velocities = []
+    for m in masks_list:
+        velocity = velocity_function(torch.unsqueeze(m, dim=0), mode_view).numpy(force=True)
+        velocities.append(velocity)
+    best_mode = np.argmax(velocities)
+
+    return best_mode
 
 
 def adjust_clusters(cluster_data, masks_tensors):

@@ -1,12 +1,17 @@
 import pickle
 import numpy as np
 import argparse
+import torch
+import os
 
 from morphing_rovers.src.clustering.clustering_model.clustering import ClusteringTerrain
 from morphing_rovers.src.mode_optimization.optimization.optimization import OptimizeMask
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 from utils import init_modes, adjust_clusters_and_modes
+
+PATH_CONTROL = "./neural_network_supervised/optimized_control.p"
+PATH_MASKS = "./mode_optimization/experiments/optimized_masks.p"
 
 
 if __name__ == "__main__":
@@ -18,6 +23,16 @@ if __name__ == "__main__":
     udp = morphing_rover_UDP()
     masks_tensors = pickle.load(open("../mode_optimization/experiments/optimized_masks.p", "rb"))
     control = pickle.load(open("optimized_control.p", "rb"))
+
+    if os.path.exists(PATH_CONTROL):
+        control = pickle.load(open(PATH_CONTROL, "rb"))
+    else:
+        control = morphing_rover_UDP().example()
+
+    if os.path.exists(PATH_MASKS):
+        masks_tensors = pickle.load(open(PATH_MASKS, "rb"))
+    else:
+        masks_tensors = [torch.rand(11, 11, requires_grad=True) for _ in range(4)]
 
     # set-up the chromosome
     masks = np.array([m.numpy(force=True) for m in masks_tensors]).flatten()
@@ -78,7 +93,7 @@ if __name__ == "__main__":
         chromosome = np.concatenate((masks, control.chromosome))
         chromosome[628] = 10000
 
-    pickle.dump(chromosome, open("chromosome.p", "wb"))
+        pickle.dump(chromosome, open(f"chromosome_iteration_{i}.p", "wb"))
 
     udp.plot(chromosome, plot_modes=True, plot_mode_efficiency=True)
     udp.pretty(chromosome)
