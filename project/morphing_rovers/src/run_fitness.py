@@ -5,7 +5,7 @@ import argparse
 from morphing_rovers.src.clustering.clustering_model.clustering import ClusteringTerrain
 from morphing_rovers.src.mode_optimization.optimization.optimization import OptimizeMask
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME
-from optimization import OptimizeNetworkSupervised
+from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 from utils import init_modes, adjust_clusters_and_modes
 
 
