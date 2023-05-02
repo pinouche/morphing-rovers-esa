@@ -9,13 +9,14 @@ fc2_input_dim: 256
 
 # clustering_algorithm
 clustering_algo: "kmeans"
+n_clusters: 1
 
 # for mask optimization
 n_iter_mask_optimization: 1000
 learning_rate_mask_optimization: 0.02
 
 # for supervised learning using the angle
-n_iter_supervised_learning: 10
+n_iter_supervised_learning: 20
 learning_rate_supervised_learning: 0.001
 
 # for supervised learning using the mode switch

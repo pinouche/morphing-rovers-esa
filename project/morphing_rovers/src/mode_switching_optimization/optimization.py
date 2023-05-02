@@ -5,7 +5,6 @@ import os
 import pickle
 
 from torch.optim import Adam
-from torch.nn.functional import binary_cross_entropy
 
 from morphing_udp_modified import morphing_rover_UDP, Rover
 from morphing_rovers.src.utils import Config
@@ -63,14 +62,16 @@ class OptimizeNetworkSupervisedSwitching:
             target = data[-1]
 
             if target:
-                target = 10
+                target = 1
             else:
-                target = -10
+                target = -1
 
             self.rover_view.append(np.squeeze(data[0]))
             self.rover_state.append(np.squeeze(data[1]))
             self.latent_state.append(np.squeeze(data[2]))
             self.data_y.append(target)
+
+        print(f"Random classification gives an accuracy of {np.sum(np.array(self.data_y) == 1)/len(self.data_y)}")
 
     def create_optimizer(self):
 
@@ -78,8 +79,8 @@ class OptimizeNetworkSupervisedSwitching:
                               self.config.learning_rate_supervised_learning_mode_switching)
 
     def accuracy_metric(self, prediction, target):
-        prediction[prediction >= 0] = 10
-        prediction[prediction < 0] = -10
+        prediction[prediction >= 0] = 1
+        prediction[prediction < 0] = -1
         accuracy = np.sum(prediction.numpy(force=True) == np.array(target))/len(target)
 
         return accuracy

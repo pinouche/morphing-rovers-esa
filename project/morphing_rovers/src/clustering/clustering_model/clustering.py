@@ -5,7 +5,7 @@ import torch
 
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
-from sklearn.cluster import KMeans, AgglomerativeClustering, SpectralClustering
+from sklearn.cluster import KMeans
 
 from morphing_rovers.src.utils import Config
 from morphing_rovers.src.clustering.utils import load_checkpoint
@@ -60,11 +60,11 @@ class ClusteringTerrain:
         self.latent_representation = pca_model.fit_transform(self.latent_representation.numpy(force=True))
 
         if self.config.clustering_algo == "kmeans":
-            cluster_model = KMeans(n_clusters=4, random_state=1, n_init="auto")
+            cluster_model = KMeans(n_clusters=self.config.n_clusters, random_state=1, n_init="auto")
             clusters = cluster_model.fit_predict(self.latent_representation)
 
         elif self.config.clustering_algo == "gmm":
-            cluster_model = GaussianMixture(n_components=4, random_state=1)
+            cluster_model = GaussianMixture(n_components=self.config.n_clusters, random_state=1)
             clusters = cluster_model.fit_predict(self.latent_representation)
 
         else:
