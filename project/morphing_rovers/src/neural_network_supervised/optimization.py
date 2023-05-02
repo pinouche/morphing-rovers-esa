@@ -48,7 +48,7 @@ class OptimizeNetworkSupervised:
 
         self.udp.fitness(self.udp.rover, self.completed_scenarios, n_iter)
 
-        print("LEN OF TRAINING DATA", len(self.udp.rover.training_data))
+        # print("LEN OF TRAINING DATA", len(self.udp.rover.training_data))
 
         for index in range(len(self.udp.rover.training_data)):
 
@@ -105,6 +105,6 @@ class OptimizeNetworkSupervised:
             for iteration_step in range(self.config.n_iter_supervised_learning):
                 loss = self.train_step()
 
-                if iteration_step % 10 == 0:
+                if (iteration_step+1) % 10 == 0:
                     print(f"Computing for iteration number {iteration_step+1}")
                     print(f"The average loss is: {loss}")

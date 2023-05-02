@@ -6,7 +6,7 @@ import os
 
 from morphing_rovers.src.clustering.clustering_model.clustering import ClusteringTerrain
 from morphing_rovers.src.mode_optimization.optimization.optimization import OptimizeMask
-from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME
+from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 from utils import init_modes, adjust_clusters_and_modes, update_chromosome_with_mask
 
@@ -21,13 +21,13 @@ if __name__ == "__main__":
     options = options.parse_args()
 
     udp = morphing_rover_UDP()
-    masks_tensors = pickle.load(open("../mode_optimization/experiments/optimized_masks.p", "rb"))
-    control = pickle.load(open("optimized_control.p", "rb"))
 
     if os.path.exists(PATH_CONTROL):
         control = pickle.load(open(PATH_CONTROL, "rb"))
     else:
-        control = morphing_rover_UDP().example()
+        chromosome = morphing_rover_UDP().example()
+        rover = Rover(chromosome)
+        control = rover.Control
 
     if os.path.exists(PATH_MASKS):
         masks_tensors = pickle.load(open(PATH_MASKS, "rb"))
@@ -68,8 +68,8 @@ if __name__ == "__main__":
             chromosome[628] = 10000
 
         # compute fitness
-        fitness = udp.fitness(chromosome)
-        print("round number", i, "fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
+        fitness = network_trainer.udp.fitness(chromosome)
+        print("round number", i, "fitness", fitness, "overall speed", np.mean(network_trainer.udp.rover.overall_speed))
 
         # clustering
         cluster_trainer = ClusteringTerrain(options, path_data)

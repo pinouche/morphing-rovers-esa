@@ -8,7 +8,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def load_checkpoint(session_name: str = "session_1", latent_dim: int = 50, fc_dim: int = 256) -> Autoencoder:
 
-    checkpoint_name = os.path.join("..", "autoencoder", "experiments", session_name)
+    checkpoint_name = os.path.join(".", "autoencoder", "experiments", session_name)
     checkpoint = torch.load(checkpoint_name, map_location=device)
 
     model = Autoencoder(latent_dim, fc_dim)

@@ -25,7 +25,7 @@ from torchvision.transforms.functional import gaussian_blur, rotate
 # maps: './myfolder/Maps'
 # coordinates: './myfolder/coordinates.txt'
 # example chromosome: './myfolder/example_rover.npy'
-PATH = os.path.join("..", "..", "data")
+PATH = os.path.join("..", "data")
 
 # Parameters for the rover modes
 MASK_SIZE = 11
