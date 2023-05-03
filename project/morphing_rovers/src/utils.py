@@ -40,7 +40,6 @@ def init_modes(options, chromosome):
     path_data = network_trainer.udp.rover.cluster_data
 
     # clustering
-    print("HERE")
     cluster_trainer = ClusteringTerrain(options, path_data)
     cluster_trainer.run()
     cluster_trainer_output = cluster_trainer.output
