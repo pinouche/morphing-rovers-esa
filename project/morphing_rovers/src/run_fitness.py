@@ -58,7 +58,7 @@ if __name__ == "__main__":
     for i in range(10):
         print(f"COMPUTING FOR ITERATION NUMBER {i}")
 
-        for n_iter in range(1, 2+1):
+        for n_iter in range(1, MAX_TIME+1):
             print(f"Optimizing network for the {n_iter} first rover's steps")
 
             network_trainer = OptimizeNetworkSupervised(options, chromosome)
