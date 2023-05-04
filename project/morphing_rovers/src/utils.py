@@ -35,12 +35,12 @@ def adjust_clusters(cluster_data, masks_tensors):
 def init_modes(options, chromosome):
 
     # initial run to get the dataset for clustering
-    network_trainer = OptimizeNetworkSupervised(options, chromosome)
-    network_trainer.train(MAX_TIME, train=False)
-    path_data = network_trainer.udp.rover.cluster_data
+    # network_trainer = OptimizeNetworkSupervised(options, chromosome)
+    # network_trainer.train(MAX_TIME, train=False)
+    # path_data = network_trainer.udp.rover.cluster_data
 
     # clustering
-    cluster_trainer = ClusteringTerrain(options, path_data)
+    cluster_trainer = ClusteringTerrain(options, data=None)
     cluster_trainer.run()
     cluster_trainer_output = cluster_trainer.output
 
