@@ -80,8 +80,6 @@ class OptimizeMask:
 
             data_cluster = self.mode_view_data[self.cluster_id == cluster_id]
 
-            # if data_cluster.shape[0] > 0:
-            # print(f"Training for cluster {cluster_id} with {data_cluster.shape[0]} sample.")
             for iteration_step in range(self.config.n_iter_mask_optimization):
                 solution_expand = self.solution.repeat(data_cluster.shape[0], 1, 1)
                 self.velocity = self.train_step(solution_expand, data_cluster)
@@ -92,6 +90,7 @@ class OptimizeMask:
             self.optimized_masks.append(self.solution)
 
         self.optimized_masks = self.optimized_masks * int(4/self.config.n_clusters)
-
         self.weighted_average = weighted_average_velocity/len(self.data[0])
+
+        print("THE WEIGHTED AVERAGE SPEED IS", self.weighted_average)
         # pickle.dump(self.optimized_masks, open("./experiments/optimized_masks.p", "wb"))
