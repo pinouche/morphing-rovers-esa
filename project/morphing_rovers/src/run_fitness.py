@@ -14,6 +14,7 @@ from utils import init_modes, adjust_clusters_and_modes, update_chromosome_with_
 
 PATH_CONTROL = "./neural_network_supervised/optimized_control.p"
 PATH_MASKS = "./mode_optimization/experiments/optimized_masks.p"
+N_ITERATIONS_FULL_RUN = 1
 
 
 if __name__ == "__main__":
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     fitness = udp.fitness(chromosome)
     print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
-    for i in range(10):
+    for i in range(N_ITERATIONS_FULL_RUN):
         print(f"COMPUTING FOR ITERATION NUMBER {i}")
 
         for n_iter in range(1, MAX_TIME+1):
@@ -75,24 +76,25 @@ if __name__ == "__main__":
         fitness = udp.fitness(chromosome)
         print("round number", i, "fitness", fitness, "overall speed", np.mean(network_trainer.udp.rover.overall_speed))
 
-        # clustering
-        cluster_trainer = ClusteringTerrain(options, path_data)
-        cluster_trainer.run()
-        cluster_trainer_output = cluster_trainer.output
+        if N_ITERATIONS_FULL_RUN > 1:
+            # clustering
+            cluster_trainer = ClusteringTerrain(options, path_data)
+            cluster_trainer.run()
+            cluster_trainer_output = cluster_trainer.output
 
-        # optimize modes
-        mode_trainer = OptimizeMask(options, data=cluster_trainer_output)
-        mode_trainer.train()
-        best_average_speed = mode_trainer.weighted_average
-        masks_tensors = mode_trainer.optimized_masks
+            # optimize modes
+            mode_trainer = OptimizeMask(options, data=cluster_trainer_output)
+            mode_trainer.train()
+            best_average_speed = mode_trainer.weighted_average
+            masks_tensors = mode_trainer.optimized_masks
 
-        if len(np.unique(cluster_trainer_output[1])) != 1:
-            masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed)
+            if len(np.unique(cluster_trainer_output[1])) != 1:
+                masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed)
 
-        # updated chromosome
-        chromosome = update_chromosome_with_mask(masks_tensors,
-                                                 network_trainer.udp.rover.Control.chromosome,
-                                                 always_switch=True)
+            # updated chromosome
+            chromosome = update_chromosome_with_mask(masks_tensors,
+                                                     network_trainer.udp.rover.Control.chromosome,
+                                                     always_switch=True)
 
         pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_iteration_{i}.p", "wb"))
 
