@@ -10,8 +10,8 @@ from sklearn.cluster import KMeans
 from morphing_rovers.utils import Config
 from morphing_rovers.src.clustering.utils import load_checkpoint
 
-DATA_PATH_TRAIN = "../autoencoder/training_dataset/train_mode_view_dataset.p"
-DATA_PATH_VAL = "../autoencoder/training_dataset/val_mode_view_dataset.p"
+DATA_PATH_TRAIN = "./autoencoder/training_dataset/train_mode_view_dataset.p"
+DATA_PATH_VAL = "./autoencoder/training_dataset/val_mode_view_dataset.p"
 
 
 class ClusteringTerrain:
