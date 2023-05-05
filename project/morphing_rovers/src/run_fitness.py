@@ -48,6 +48,7 @@ if __name__ == "__main__":
 
     if len(np.unique(cluster_trainer_output[1])) != 1:
         # adjust clusters and optimize masks again iteratively
+        print("ADJUSTING CLUSTERS...")
         masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed)
 
     # updated chromosome
