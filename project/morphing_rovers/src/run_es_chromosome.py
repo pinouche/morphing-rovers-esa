@@ -1,8 +1,11 @@
+import pickle
 import argparse
 import os
-import pickle
 
 from morphing_rovers.src.evolution_strategies.evolution_strategies import EvolutionStrategies
+
+PATH_CHROMOSOME = "../trained_chromosomes/chromosome_iteration_0.p"
+
 
 if __name__ == "__main__":
     options = argparse.ArgumentParser(description='Model config')
@@ -17,3 +20,5 @@ if __name__ == "__main__":
 
     es_trainer = EvolutionStrategies(options, chromosome)
     es_trainer.fit()
+
+
