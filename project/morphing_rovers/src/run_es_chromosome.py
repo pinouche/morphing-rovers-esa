@@ -19,7 +19,7 @@ if __name__ == "__main__":
     else:
         raise FileNotFoundError
 
-    chromosome[628] = 0
+    chromosome[628] = 0.0
 
     # udp = morphing_rover_UDP()
     # chromosome = udp.example()
