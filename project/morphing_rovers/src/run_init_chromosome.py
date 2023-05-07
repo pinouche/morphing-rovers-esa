@@ -12,8 +12,7 @@ from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 from utils import init_modes, adjust_clusters_and_modes, update_chromosome_with_mask
 
-PATH_CONTROL = "./neural_network_supervised/optimized_control.p"
-PATH_MASKS = "./mode_optimization/experiments/optimized_masks.p"
+PATH_CHROMOSOME = "./trained_chromosomes/chromosome_iteration_0.p"
 N_ITERATIONS_FULL_RUN = 1
 
 
@@ -25,20 +24,14 @@ if __name__ == "__main__":
 
     udp = morphing_rover_UDP()
 
-    if os.path.exists(PATH_CONTROL):
-        control = pickle.load(open(PATH_CONTROL, "rb"))
+    if os.path.exists(PATH_CHROMOSOME):
+        chromosome = pickle.load(open(PATH_CONTROL, "rb"))
     else:
         chromosome = morphing_rover_UDP().example()
         rover = Rover(chromosome)
         control = rover.Control
-
-    if os.path.exists(PATH_MASKS):
-        masks_tensors = pickle.load(open(PATH_MASKS, "rb"))
-    else:
         masks_tensors = [torch.rand(11, 11, requires_grad=True) for _ in range(4)]
-
-    # set-up the chromosome
-    chromosome = update_chromosome_with_mask(masks_tensors, control.chromosome, always_switch=True)
+        chromosome = update_chromosome_with_mask(masks_tensors, control.chromosome, always_switch=True)
 
     print("LEN MASKS DATA", len(masks_tensors))
 

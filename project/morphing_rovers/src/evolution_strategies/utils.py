@@ -14,3 +14,6 @@ def perturb_chromosome(chromosome, noise, sigma):
 def compute_fitness(chromosome, udp):
     fitness = udp.fitness(chromosome)
     return fitness
+
+
+

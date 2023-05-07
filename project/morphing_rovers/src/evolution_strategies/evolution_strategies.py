@@ -1,62 +1,95 @@
 import numpy as np
 import copy
+import yaml
+import random
 
-from utils import get_noise, perturb_chromosome, compute_fitness
-
+from morphing_rovers.src.evolution_strategies.utils import get_noise, perturb_chromosome, compute_fitness
 from morphing_rovers.morphing_udp import morphing_rover_UDP
+from morphing_rovers.utils import Config
 
 
 N_PARAM_TO_PERTURB = 19126
 
 
-class Solution:
+class EvolutionStrategies:
 
-    def __init__(self, chromosome):
+    def __init__(self, options, chromosome):
+        self.options = options
         self.chromosome = chromosome
         self.udp = morphing_rover_UDP()
+        self.best_fitness = np.inf
+        self.best_chromosome = self.chromosome
 
-    def update(self, sigma: float, lr: float, pop_size: int) -> None:
+        ##########
+        # Initialise/restore
+        ##########
+        self.config = None
+        config_path = self.options.config
+        # Load config file, save it to the experiment output path, and convert to a Config class.
+        with open(config_path) as f:
+            self.config = yaml.safe_load(f)
+        self.config = Config(self.config)
 
-        temporary_chromosome = copy.deepcopy(self.chromosome)
-        current_fitness = compute_fitness(temporary_chromosome, self.udp)
-        print(f"The current fitness is {current_fitness}")
+        # init the hyperparameters
+        self.sigma = self.config.es_sigma
+        self.lr = self.config.es_lr
+        self.pop_size = self.config.es_pop_size
+        self.epochs = self.config.es_epochs
 
-        fitness_list = list()
-        fitness_list.append(current_fitness)
+    def update(self) -> None:
 
-        list_weighted_noise = []
+        self.best_fitness = compute_fitness(self.chromosome, self.udp)[0]
+        print(f"The current fitness is {self.best_fitness}")
+
+        list_noise = []
+        list_fitness = []
         # compute fitness for each network in the population
-        for p in range(pop_size):
+        for p in range(self.pop_size):
+            random_indices = random.sample(range(N_PARAM_TO_PERTURB), 100)
+            temporary_chromosome = copy.deepcopy(self.chromosome)
+
             if p % 10 == 0:
                 print(f"Computing fitness for individual number {p}")
 
             # get the noise
-            noise = get_noise(N_PARAM_TO_PERTURB)
-            perturbed_chromosome = perturb_chromosome(temporary_chromosome, noise, sigma)
+            noise = get_noise(len(random_indices))
+
+            chromosome_to_perturb = copy.deepcopy(temporary_chromosome[random_indices])
+            chromosome_to_perturb = perturb_chromosome(chromosome_to_perturb, noise, self.sigma)
+            temporary_chromosome[random_indices] = chromosome_to_perturb
 
             # compute the fitness
-            f_obj = compute_fitness(perturbed_chromosome, self.udp)
-            fitness_list.append(f_obj)
-            weighted_noise = f_obj*noise
-            list_weighted_noise.append(weighted_noise)
+            f_obj = compute_fitness(temporary_chromosome, self.udp)[0]
+            list_fitness.append(f_obj)
+            list_noise.append(noise)
+
+            if f_obj < self.best_fitness:
+                print(f"new best fitness is {f_obj}")
+                self.chromosome = temporary_chromosome
+                self.best_fitness = f_obj
+
+        # list_weighted_noise = np.array([list_fitness[i]*list_noise[i] for i in range(len(list_fitness))])
+
+        # self.chromosome = self.best_chromosome
 
         # compute update step
-        gradient_estimate = np.mean(np.array(list_weighted_noise), axis=0)
-        update_step = [grad*(lr/sigma) for grad in gradient_estimate]
+        # gradient_estimate = np.mean(np.array(list_weighted_noise), axis=0)
+        # update_step = gradient_estimate*(self.lr/self.sigma)
+        #
+        # print("GRADIENT SHAPE", gradient_estimate.shape, "UPDATE_STEP", update_step.shape)
+        #
+        # # update chromosome
+        # self.chromosome[:N_PARAM_TO_PERTURB] = (self.chromosome[:N_PARAM_TO_PERTURB] - update_step)
+        # fitness_update = compute_fitness(self.chromosome, self.udp)
 
-        # update chromosome
-        self.chromosome += update_step
-        fitness_update = compute_fitness(self.chromosome, self.udp)
+        # print(f"The updated solution's fitness is {fitness_update}")
 
-        print(f"The champion's fitness is {np.max(fitness_list)}, and the updated solution's fitness is {fitness_update}")
+    def fit(self) -> None:
 
-    def fit(self, sigma: float, learning_rate: float, pop_size: int, epochs: int) -> None:
-
-        objective_list = []
-
-        best_objective_val = 0
-        for epoch in range(epochs):
+        for epoch in range(self.epochs):
             print(f"COMPUTING FOR EPOCH {epoch}")
 
-            self.update(sigma, learning_rate, pop_size)
+            self.update()
+
+
 
