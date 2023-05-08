@@ -31,7 +31,10 @@ if __name__ == "__main__":
         rover = Rover(chromosome)
         control = rover.Control
         masks_tensors = [torch.rand(11, 11, requires_grad=True) for _ in range(4)]
-        chromosome = update_chromosome_with_mask(masks_tensors, control.chromosome, always_switch=True)
+        chromosome = update_chromosome_with_mask(masks_tensors, control.chromosome, always_switch=False)
+
+    fitness = udp.fitness(chromosome)
+    print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
     # initial run to get the dataset for clustering
     masks_tensors, cluster_trainer_output, best_average_speed = init_modes(options, chromosome)
@@ -58,27 +61,47 @@ if __name__ == "__main__":
         path_data = network_trainer.udp.rover.cluster_data
         print("OVERALL DISTANCE", np.mean(network_trainer.udp.rover.overall_distance))
 
-        # clustering
-        cluster_trainer = ClusteringTerrain(options, path_data)
-        cluster_trainer.run()
-        cluster_trainer_output = cluster_trainer.output
+        if n_iter % 10 == 0:
+            # clustering
+            cluster_trainer = ClusteringTerrain(options, path_data)
+            cluster_trainer.run()
+            cluster_trainer_output = cluster_trainer.output
 
-        # optimize modes
-        mode_trainer = OptimizeMask(options, data=cluster_trainer_output)
-        mode_trainer.train()
-        best_average_speed = mode_trainer.weighted_average
-        masks_tensors = mode_trainer.optimized_masks
+            # optimize modes
+            mode_trainer = OptimizeMask(options, data=cluster_trainer_output)
+            mode_trainer.train()
+            best_average_speed = mode_trainer.weighted_average
+            masks_tensors = mode_trainer.optimized_masks
 
-        if len(np.unique(cluster_trainer_output[1])) != 1:
-            masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors,
-                                                      best_average_speed)
+            if len(np.unique(cluster_trainer_output[1])) != 1:
+                masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors,
+                                                          best_average_speed)
 
-        # updated chromosome
-        chromosome = update_chromosome_with_mask(masks_tensors,
-                                                 network_trainer.udp.rover.Control.chromosome,
-                                                 always_switch=True)
+            # here, we want to optimize the ms parameters (the linear layer of the past input and the linear output layer)
+            w_copy = copy.deepcopy(network_trainer.udp.rover.Control.chromosome)
+            masks = np.array([m.numpy(force=True) for m in masks_tensors]).flatten()
+            best_score = np.inf
+            chromosome = None
+            print("OPTIMIZING MODE SWITCHING")
+            for _ in range(100):
+                noise = np.random.randn(len(w_copy))*0.01
+                new_weights = w_copy + noise
+                new_weights = np.concatenate((masks, new_weights))
 
-        print("AVERAGE ROVER'S SPEED: ", np.mean(network_trainer.udp.rover.overall_speed))
+                network_trainer = OptimizeNetworkSupervised(options, new_weights)
+                network_trainer.train(n_iter, train=False)
+
+                average_distance = np.mean(network_trainer.udp.rover.overall_distance)
+                if average_distance < best_score:
+                    best_score = average_distance
+                    chromosome = new_weights
+
+            # updated chromosome
+            # chromosome = update_chromosome_with_mask(masks_tensors,
+            #                                          network_trainer.udp.rover.Control.chromosome,
+            #                                          always_switch=False)
+
+            print("AVERAGE ROVER'S SPEED: ", np.mean(network_trainer.udp.rover.overall_speed))
 
     # compute fitness
     fitness = udp.fitness(chromosome)
