@@ -489,7 +489,9 @@ class Rover:
         self.latent_state = None
         self.angle_adjustment = 0
 
+        # extra data
         self.overall_speed = []
+        self.overall_distance = []
 
         # build training data
         self.training_data = []
@@ -765,4 +767,7 @@ class morphing_rover_UDP:
             if current_distance <= SAMPLE_RADIUS:
                 completed_scenarios += 1
                 break
+
+            if timestep == num_steps_to_run-1:
+                self.rover.overall_distance.append(current_distance)
 

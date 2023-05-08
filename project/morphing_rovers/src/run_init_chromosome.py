@@ -25,15 +25,13 @@ if __name__ == "__main__":
     udp = morphing_rover_UDP()
 
     if os.path.exists(PATH_CHROMOSOME):
-        chromosome = pickle.load(open(PATH_CONTROL, "rb"))
+        chromosome = pickle.load(open(PATH_CHROMOSOME, "rb"))
     else:
         chromosome = morphing_rover_UDP().example()
         rover = Rover(chromosome)
         control = rover.Control
         masks_tensors = [torch.rand(11, 11, requires_grad=True) for _ in range(4)]
         chromosome = update_chromosome_with_mask(masks_tensors, control.chromosome, always_switch=True)
-
-    print("LEN MASKS DATA", len(masks_tensors))
 
     # initial run to get the dataset for clustering
     masks_tensors, cluster_trainer_output, best_average_speed = init_modes(options, chromosome)
@@ -45,52 +43,48 @@ if __name__ == "__main__":
         masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed)
 
     # updated chromosome
-    chromosome = update_chromosome_with_mask(masks_tensors, control.chromosome, always_switch=True)
+    masks = np.array([m.numpy(force=True) for m in masks_tensors]).flatten()
+    chromosome[:11*11*4] = masks
+    # chromosome = update_chromosome_with_mask(masks_tensors, chromosome, always_switch=True)
 
     fitness = udp.fitness(chromosome)
     print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
-    for i in range(N_ITERATIONS_FULL_RUN):
-        print(f"COMPUTING FOR ITERATION NUMBER {i}")
+    for n_iter in range(1, MAX_TIME+1):
+        print(f"Optimizing network for the {n_iter} first rover's steps")
 
-        for n_iter in range(1, MAX_TIME+1):
-            print(f"Optimizing network for the {n_iter} first rover's steps")
+        network_trainer = OptimizeNetworkSupervised(options, chromosome)
+        network_trainer.train(n_iter)
+        path_data = network_trainer.udp.rover.cluster_data
+        print("OVERALL DISTANCE", np.mean(network_trainer.udp.rover.overall_distance))
 
-            network_trainer = OptimizeNetworkSupervised(options, chromosome)
-            network_trainer.train(n_iter)
-            path_data = network_trainer.udp.rover.cluster_data
+        # clustering
+        cluster_trainer = ClusteringTerrain(options, path_data)
+        cluster_trainer.run()
+        cluster_trainer_output = cluster_trainer.output
 
-            print("AVERAGE ROVER'S SPEED: ", np.mean(network_trainer.udp.rover.overall_speed))
+        # optimize modes
+        mode_trainer = OptimizeMask(options, data=cluster_trainer_output)
+        mode_trainer.train()
+        best_average_speed = mode_trainer.weighted_average
+        masks_tensors = mode_trainer.optimized_masks
 
-            chromosome = copy.deepcopy(update_chromosome_with_mask(masks_tensors,
-                                                                   network_trainer.udp.rover.Control.chromosome,
-                                                                   always_switch=True))
+        if len(np.unique(cluster_trainer_output[1])) != 1:
+            masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors,
+                                                      best_average_speed)
 
-        # compute fitness
-        fitness = udp.fitness(chromosome)
-        print("round number", i, "fitness", fitness, "overall speed", np.mean(network_trainer.udp.rover.overall_speed))
+        # updated chromosome
+        chromosome = update_chromosome_with_mask(masks_tensors,
+                                                 network_trainer.udp.rover.Control.chromosome,
+                                                 always_switch=True)
 
-        if N_ITERATIONS_FULL_RUN > 1:
-            # clustering
-            cluster_trainer = ClusteringTerrain(options, path_data)
-            cluster_trainer.run()
-            cluster_trainer_output = cluster_trainer.output
+        print("AVERAGE ROVER'S SPEED: ", np.mean(network_trainer.udp.rover.overall_speed))
 
-            # optimize modes
-            mode_trainer = OptimizeMask(options, data=cluster_trainer_output)
-            mode_trainer.train()
-            best_average_speed = mode_trainer.weighted_average
-            masks_tensors = mode_trainer.optimized_masks
+    # compute fitness
+    fitness = udp.fitness(chromosome)
+    print("round number", i, "fitness", fitness, "overall speed", np.mean(network_trainer.udp.rover.overall_speed))
 
-            if len(np.unique(cluster_trainer_output[1])) != 1:
-                masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed)
-
-            # updated chromosome
-            chromosome = update_chromosome_with_mask(masks_tensors,
-                                                     network_trainer.udp.rover.Control.chromosome,
-                                                     always_switch=True)
-
-        pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_iteration_{i}.p", "wb"))
+    pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_iteration_{i}.p", "wb"))
 
     udp.plot(chromosome, plot_modes=True, plot_mode_efficiency=True)
     udp.pretty(chromosome)

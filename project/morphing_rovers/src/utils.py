@@ -40,7 +40,7 @@ def init_modes(options, chromosome):
     path_data = network_trainer.udp.rover.cluster_data
 
     # clustering
-    cluster_trainer = ClusteringTerrain(options, data=None)
+    cluster_trainer = ClusteringTerrain(options, data=path_data)
     cluster_trainer.run()
     cluster_trainer_output = cluster_trainer.output
 
@@ -56,13 +56,14 @@ def init_modes(options, chromosome):
 def adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed):
 
     # adjust clusters and optimize masks again
+    iteration_number = 0
     early_stopping_counter = 0
     while True:
         cluster_trainer_output = adjust_clusters(cluster_trainer_output, masks_tensors)
         mode_trainer = OptimizeMask(options, data=cluster_trainer_output)
         mode_trainer.train()
         new_average_speed = mode_trainer.weighted_average
-        print(f"The weighted average speed is: {new_average_speed} and the cluster sizes are {np.unique(cluster_trainer_output[1], return_counts=True)}")
+        # print(f"The weighted average speed is: {new_average_speed} and the cluster sizes are {np.unique(cluster_trainer_output[1], return_counts=True)}")
         masks_tensors = mode_trainer.optimized_masks
 
         if new_average_speed > best_average_speed:
@@ -73,6 +74,11 @@ def adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, be
 
         if early_stopping_counter == 5:
             break
+
+        if iteration_number == 10:
+            break
+
+        iteration_number += 1
 
     return masks_tensors
 

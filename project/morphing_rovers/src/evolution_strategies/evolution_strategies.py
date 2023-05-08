@@ -44,8 +44,8 @@ class EvolutionStrategies:
         list_noise = []
         list_fitness = []
         # compute fitness for each network in the population
+        random_indices = random.sample(range(N_PARAM_TO_PERTURB), 1)
         for p in range(self.pop_size):
-            random_indices = random.sample(range(N_PARAM_TO_PERTURB), 100)
             temporary_chromosome = copy.deepcopy(self.chromosome)
 
             if p % 10 == 0:
@@ -65,12 +65,12 @@ class EvolutionStrategies:
 
             if f_obj < self.best_fitness:
                 print(f"new best fitness is {f_obj}")
-                self.chromosome = temporary_chromosome
+                self.best_chromosome = temporary_chromosome
                 self.best_fitness = f_obj
 
-        # list_weighted_noise = np.array([list_fitness[i]*list_noise[i] for i in range(len(list_fitness))])
+        list_weighted_noise = np.array([list_fitness[i]*list_noise[i] for i in range(len(list_fitness))])
 
-        # self.chromosome = self.best_chromosome
+        self.chromosome = self.best_chromosome
 
         # compute update step
         # gradient_estimate = np.mean(np.array(list_weighted_noise), axis=0)
@@ -79,9 +79,9 @@ class EvolutionStrategies:
         # print("GRADIENT SHAPE", gradient_estimate.shape, "UPDATE_STEP", update_step.shape)
         #
         # # update chromosome
-        # self.chromosome[:N_PARAM_TO_PERTURB] = (self.chromosome[:N_PARAM_TO_PERTURB] - update_step)
+        # self.chromosome[random_indices] = (self.chromosome[random_indices] - update_step)
         # fitness_update = compute_fitness(self.chromosome, self.udp)
-
+        #
         # print(f"The updated solution's fitness is {fitness_update}")
 
     def fit(self) -> None:
