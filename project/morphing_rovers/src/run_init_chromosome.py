@@ -58,7 +58,7 @@ if __name__ == "__main__":
             print(f"Optimizing network for the {n_iter} first rover's steps")
 
             network_trainer = OptimizeNetworkSupervised(options, chromosome)
-            network_trainer.train(n_iter)
+            network_trainer.train(n_iter, train=True)
             path_data = network_trainer.udp.rover.cluster_data
             print("OVERALL DISTANCE", np.mean(network_trainer.udp.rover.overall_distance))
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
                 network_trainer.train(n_iter, train=False)
                 distance = np.mean(network_trainer.udp.rover.overall_distance)
 
-                if distance < best_distance:
+                if (distance < best_distance) and (iterations > 1):
                     best_distance = distance
                     best_chromosome = chromosome
 
@@ -105,33 +105,31 @@ if __name__ == "__main__":
             fitness = udp.fitness(chromosome)[0]
             print("FITNESS AFTER MODE OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
-            if fitness < 2.20:
-                w_copy = copy.deepcopy(chromosome)
-                network_trainer = OptimizeNetworkSupervised(options, chromosome)
+            w_copy = copy.deepcopy(chromosome)
+            best_chromosome = copy.deepcopy(chromosome)
+            network_trainer = OptimizeNetworkSupervised(options, chromosome)
+            network_trainer.train(n_iter, train=False)
+            best_score = np.mean(network_trainer.udp.rover.overall_distance)
+
+            # here, we want to optimize the ms parameters (the linear output layer)
+            for _ in range(20):
+                new_weights = copy.deepcopy(chromosome)
+                noise = np.random.randn(40)*0.01
+                new_weights[-47:-7] = w_copy[-47:-7] + noise
+
+                network_trainer = OptimizeNetworkSupervised(options, new_weights)
                 network_trainer.train(n_iter, train=False)
-                best_score = np.mean(network_trainer.udp.rover.overall_distance)
-                best_chromosome = chromosome
+                score = np.mean(network_trainer.udp.rover.overall_distance)
 
-                # here, we want to optimize the ms parameters (the linear output layer)
-                for _ in range(20):
-                    new_weights = copy.deepcopy(chromosome)
-                    noise = np.random.randn(40)*0.01
-                    new_weights[-47:-7] = w_copy[-47:-7] + noise
-                    new_weights = np.concatenate((masks, new_weights))
+                if score < best_score:
+                    best_score = score
+                    best_chromosome = new_weights
 
-                    network_trainer = OptimizeNetworkSupervised(options, new_weights)
-                    network_trainer.train(n_iter, train=False)
-                    score = np.mean(network_trainer.udp.rover.overall_distance)
+            chromosome = best_chromosome
 
-                    if score < best_score:
-                        best_score = score
-                        best_chromosome = new_weights
-
-                chromosome = best_chromosome
-
-                # compute fitness
-                fitness = udp.fitness(chromosome)[0]
-                print("FITNESS AFTER M_s OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed))
+            # compute fitness
+            fitness = udp.fitness(chromosome)[0]
+            print("FITNESS AFTER M_s OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
 
     pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_iteration_{i}.p", "wb"))

@@ -92,5 +92,5 @@ class OptimizeMask:
         self.optimized_masks = self.optimized_masks * int(4/self.config.n_clusters)
         self.weighted_average = weighted_average_velocity/len(self.data[0])
 
-        print("THE WEIGHTED AVERAGE SPEED IS", self.weighted_average)
+        # print("THE WEIGHTED AVERAGE SPEED IS", self.weighted_average)
         # pickle.dump(self.optimized_masks, open("./experiments/optimized_masks.p", "wb"))

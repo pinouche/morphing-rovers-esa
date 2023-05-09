@@ -16,10 +16,11 @@ DATA_PATH_VAL = "./autoencoder/training_dataset/val_mode_view_dataset.p"
 
 class ClusteringTerrain:
 
-    def __init__(self, options, data=None):
+    def __init__(self, options, data=None, random_state=None):
         self.options = options
         self.model = None
 
+        self.random_state = random_state
         self.data = data
         self.latent_representation = None
         self.output = None
@@ -64,7 +65,7 @@ class ClusteringTerrain:
             clusters = cluster_model.fit_predict(self.latent_representation)
 
         elif self.config.clustering_algo == "gmm":
-            cluster_model = GaussianMixture(n_components=self.config.n_clusters, random_state=1)
+            cluster_model = GaussianMixture(n_components=self.config.n_clusters, random_state=self.random_state)
             clusters = cluster_model.fit_predict(self.latent_representation)
 
         else:

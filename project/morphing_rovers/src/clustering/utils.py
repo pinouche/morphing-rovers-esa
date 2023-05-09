@@ -14,7 +14,7 @@ def load_checkpoint(session_name: str = "session_1", latent_dim: int = 50, fc_di
     model = Autoencoder(latent_dim, fc_dim)
     model.load_state_dict(checkpoint['model'])
 
-    print('Loaded model and optimiser weights from {}\n'.format(checkpoint_name))
+    # print('Loaded model and optimiser weights from {}\n'.format(checkpoint_name))
 
     return model
 
