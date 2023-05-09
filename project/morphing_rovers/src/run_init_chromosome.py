@@ -48,6 +48,7 @@ if __name__ == "__main__":
     fitness = udp.fitness(chromosome)[0]
     print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
+    overall_best_fitness = fitness
     for n_iter in range(1, MAX_TIME+1):
         if n_iter % 1 == 0:
             print(f"Optimizing network for the {n_iter} first rover's steps")
@@ -65,8 +66,10 @@ if __name__ == "__main__":
                   "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
 
             iterations = 1
-            if fitness < 2.20:
+            if (fitness < 2.20) and ((fitness-overall_best_fitness) < 0.01):
                 iterations = 50
+            if fitness < overall_best_fitness:
+                overall_best_fitness = fitness
 
             best_distance = np.mean(network_trainer.udp.rover.overall_distance)
             for i in range(iterations):
@@ -101,9 +104,9 @@ if __name__ == "__main__":
                 elif iterations == 1:
                     chromosome = new_chromosome
 
-            # compute fitness
-            fitness = udp.fitness(chromosome)[0]
-            print("FITNESS AFTER MODE OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed))
+                # compute fitness
+                fitness = udp.fitness(new_chromosome)[0]
+                print("FITNESS AFTER MODE OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
             # w_copy = copy.deepcopy(chromosome)
             # best_chromosome = copy.deepcopy(chromosome)
