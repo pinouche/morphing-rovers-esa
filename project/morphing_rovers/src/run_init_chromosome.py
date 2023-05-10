@@ -39,9 +39,9 @@ if __name__ == "__main__":
     # initial run to get the dataset for clustering
     masks_tensors, cluster_trainer_output, best_average_speed = init_modes(options, chromosome)
 
-    if len(np.unique(cluster_trainer_output[1])) != 1:
-        # adjust clusters and optimize masks again iteratively
-        masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed)
+    # if len(np.unique(cluster_trainer_output[1])) != 1:
+    #     # adjust clusters and optimize masks again iteratively
+    #     masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed)
 
     # updated chromosome
     masks = np.array([m.numpy(force=True) for m in masks_tensors]).flatten()
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     for j in range(1):
         for n_iter in range(1, MAX_TIME+1):
-            if n_iter % 10 == 0:
+            if n_iter % 1 == 0:
                 print(f"Optimizing network for the {n_iter} first rover's steps")
 
                 network_trainer = OptimizeNetworkSupervised(options, chromosome)
@@ -67,7 +67,7 @@ if __name__ == "__main__":
                       "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
 
                 # clustering
-                cluster_trainer = ClusteringTerrain(options, data=path_data, random_state=j)
+                cluster_trainer = ClusteringTerrain(options, data=path_data, groupby_scenario=True, random_state=j)
                 cluster_trainer.run()
                 cluster_trainer_output = cluster_trainer.output
 
@@ -77,9 +77,9 @@ if __name__ == "__main__":
                 best_average_speed = mode_trainer.weighted_average
                 masks_tensors = mode_trainer.optimized_masks
 
-                if len(np.unique(cluster_trainer_output[1])) != 1:
-                    masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors,
-                                                              best_average_speed)
+                # if len(np.unique(cluster_trainer_output[1])) != 1:
+                #     masks_tensors = adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors,
+                #                                               best_average_speed)
 
                 # updated chromosome
                 chromosome = update_chromosome_with_mask(masks_tensors,
