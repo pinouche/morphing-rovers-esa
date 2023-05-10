@@ -556,7 +556,7 @@ class Rover:
 
         return best_mode
 
-    def update_rover_state(self, rover_view, mode_view, distance_vector, original_distance):
+    def update_rover_state(self, rover_view, mode_view, distance_vector, original_distance, scenario_number):
         """
         Updates the rover state variables for the current timestep.
         Args:
@@ -577,7 +577,7 @@ class Rover:
         self.training_data.append(([rover_view.numpy(force=True), rover_state.numpy(force=True), self.latent_state.numpy(force=True)], [self.angle, angle_diff]))
 
         switching_mode, angular_change, self.latent_state = self.Control(rover_view, rover_state, self.latent_state)
-        self.cluster_data.append((mode_view, self.current_mode))
+        self.cluster_data.append((mode_view, self.current_mode, scenario_number))
 
         # Save angular velocity change obtained from neural network
         angular_velocity_factor = angular_change.detach().numpy()[0]
@@ -683,6 +683,7 @@ class morphing_rover_UDP:
         The rover defined by A must complete a series of routes across different terrains as quickly as possible using the same forms
         and controller each time.
         """
+        self.scenario_number = 0
         self.rover = None
         # Create the planet!
         self.env = MysteriousMars()
@@ -731,6 +732,7 @@ class morphing_rover_UDP:
         for heightmap in range(MAPS_PER_EVALUATION):
             for scenario in range(SCENARIOS_PER_MAP):
                 self.run_single_scenario(heightmap, scenario, completed_scenarios, num_steps_to_run)
+                self.scenario_number += 1
 
     def example(self):
         '''Load an example chromosome.'''
@@ -755,7 +757,7 @@ class morphing_rover_UDP:
         # Runs the scenario for X number of timesteps, where X is the max time / the time increment
         for timestep in range(0, num_steps_to_run):
             rover_view, mode_view = self.env.extract_local_view(self.rover.position, self.rover.angle, map_number)
-            self.rover.update_rover_state(rover_view, mode_view, distance_vector, original_distance)
+            self.rover.update_rover_state(rover_view, mode_view, distance_vector, original_distance, self.scenario_number)
             distance_vector = sample_position - self.rover.position
             current_distance = distance_vector.norm()
 

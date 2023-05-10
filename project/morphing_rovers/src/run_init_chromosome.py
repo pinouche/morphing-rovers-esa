@@ -49,6 +49,7 @@ if __name__ == "__main__":
     fitness = udp.fitness(chromosome)[0]
     print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
+    best_fitness = np.inf
     for j in range(1):
         for n_iter in range(1, MAX_TIME+1):
             if n_iter % 1 == 0:
@@ -90,8 +91,10 @@ if __name__ == "__main__":
                 fitness = udp.fitness(chromosome)[0]
                 print("FITNESS AFTER MODE OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
-
-    pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_iteration_{i}.p", "wb"))
+                if fitness < best_fitness:
+                    print("NEW BEST FITNESS!!")
+                    pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_current_best.p", "wb"))
+                    best_fitness = fitness
 
     udp.plot(chromosome, plot_modes=True, plot_mode_efficiency=True)
     udp.pretty(chromosome)
