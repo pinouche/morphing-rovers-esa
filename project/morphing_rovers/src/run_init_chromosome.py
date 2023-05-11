@@ -67,6 +67,11 @@ if __name__ == "__main__":
                 print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
                       "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
 
+                if fitness < best_fitness:
+                    print("NEW BEST FITNESS!!")
+                    pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
+                    best_fitness = fitness
+
                 # clustering
                 cluster_trainer = ClusteringTerrain(options, data=path_data, groupby_scenario=True, random_state=j)
                 cluster_trainer.run()
@@ -93,7 +98,7 @@ if __name__ == "__main__":
 
                 if fitness < best_fitness:
                     print("NEW BEST FITNESS!!")
-                    pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_current_best.p", "wb"))
+                    pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
                     best_fitness = fitness
 
     udp.plot(chromosome, plot_modes=True, plot_mode_efficiency=True)

@@ -43,36 +43,36 @@ def create_mode_views_dataset(n_samples: int = 500, val_size: float = 0.2) -> No
     coordinates_data = load_coordinates()
     mars = MysteriousMars()
 
-    mode_view_dataset = []
-    for tup in MAPPS_SCENARIO_TUPLES:
-        map_id = tup[0]
-        subset_coordinates = np.array(coordinates_data[coordinates_data[0] == map_id])
-        landing_id = tup[1]
-        start_pt = subset_coordinates[landing_id, 1:3]
-        end_pt = subset_coordinates[landing_id, 3:]
-
-        for t in np.arange(0, 1 + 1 / n_samples, 1 / n_samples):
-            new_point = (1 - t) * start_pt + t * end_pt
-            # here, we set the rover angle to be the same as angle_to_sample (in other words, we go straight to
-            # the sample)
-            rover_angle = compute_angle_to_sample(end_pt, new_point)
-            rover_view, mode_view = mars.extract_local_view(new_point, rover_angle, map_id)
-            mode_view_dataset.append(mode_view.numpy())
-
     # mode_view_dataset = []
-    # for map_id in range(len(map_size)):
+    # for tup in MAPPS_SCENARIO_TUPLES:
+    #     map_id = tup[0]
     #     subset_coordinates = np.array(coordinates_data[coordinates_data[0] == map_id])
+    #     landing_id = tup[1]
+    #     start_pt = subset_coordinates[landing_id, 1:3]
+    #     end_pt = subset_coordinates[landing_id, 3:]
     #
-    #     for landing_id in range(5):
-    #         start_pt = subset_coordinates[landing_id, 1:3]
-    #         end_pt = subset_coordinates[landing_id, 3:]
-    #         for t in np.arange(0, 1+1/n_samples, 1/n_samples):
-    #             new_point = (1-t)*start_pt+t*end_pt
-    #             # here, we set the rover angle to be the same as angle_to_sample (in other words, we go straight to
-    #             # the sample)
-    #             rover_angle = compute_angle_to_sample(end_pt, new_point)
-    #             rover_view, mode_view = mars.extract_local_view(new_point, rover_angle, map_id)
-    #             mode_view_dataset.append(mode_view.numpy())
+    #     for t in np.arange(0, 1 + 1 / n_samples, 1 / n_samples):
+    #         new_point = (1 - t) * start_pt + t * end_pt
+    #         # here, we set the rover angle to be the same as angle_to_sample (in other words, we go straight to
+    #         # the sample)
+    #         rover_angle = compute_angle_to_sample(end_pt, new_point)
+    #         rover_view, mode_view = mars.extract_local_view(new_point, rover_angle, map_id)
+    #         mode_view_dataset.append(mode_view.numpy())
+
+    mode_view_dataset = []
+    for map_id in range(len(map_size)):
+        subset_coordinates = np.array(coordinates_data[coordinates_data[0] == map_id])
+
+        for landing_id in range(5):
+            start_pt = subset_coordinates[landing_id, 1:3]
+            end_pt = subset_coordinates[landing_id, 3:]
+            for t in np.arange(0, 1+1/n_samples, 1/n_samples):
+                new_point = (1-t)*start_pt+t*end_pt
+                # here, we set the rover angle to be the same as angle_to_sample (in other words, we go straight to
+                # the sample)
+                rover_angle = compute_angle_to_sample(end_pt, new_point)
+                rover_view, mode_view = mars.extract_local_view(new_point, rover_angle, map_id)
+                mode_view_dataset.append(mode_view.numpy())
 
     mode_view_dataset = np.array(mode_view_dataset)
     np.random.shuffle(mode_view_dataset)
