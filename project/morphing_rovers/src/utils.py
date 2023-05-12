@@ -90,5 +90,7 @@ def update_chromosome_with_mask(masks_tensors, chromosome, always_switch=True):
 
     if always_switch:
         chromosome[628] = 10000
+    else:
+        chromosome[628] = 0
 
     return chromosome

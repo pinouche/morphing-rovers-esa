@@ -13,7 +13,8 @@ from morphing_rovers.src.neural_network_supervised.optimization import OptimizeN
 from utils import init_modes, adjust_clusters_and_modes, update_chromosome_with_mask
 
 PATH_CHROMOSOME = "./trained_chromosomes/chromosome_iteration_1.p"
-N_ITERATIONS_FULL_RUN = 1
+N_ITERATIONS_FULL_RUN = 10
+N_STEPS_TO_RUN = 200
 
 
 if __name__ == "__main__":
@@ -50,8 +51,9 @@ if __name__ == "__main__":
     print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
     best_fitness = np.inf
-    for j in range(1):
-        for n_iter in range(1, MAX_TIME+1):
+    fitness_list = [[] for _ in range(N_ITERATIONS_FULL_RUN)]
+    for j in range(N_ITERATIONS_FULL_RUN):
+        for n_iter in range(1, N_STEPS_TO_RUN+1):
             if n_iter % 1 == 0:
                 print(f"Optimizing network for the {n_iter} first rover's steps")
 
@@ -64,6 +66,7 @@ if __name__ == "__main__":
                                                          always_switch=True)
 
                 fitness = udp.fitness(chromosome)[0]
+                fitness_list[j].append(fitness)
                 print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
                       "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
 
@@ -94,12 +97,15 @@ if __name__ == "__main__":
 
                 # compute fitness
                 fitness = udp.fitness(chromosome)[0]
+                fitness_list[j].append(fitness)
                 print("FITNESS AFTER MODE OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
                 if fitness < best_fitness:
                     print("NEW BEST FITNESS!!")
                     pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
                     best_fitness = fitness
+
+                pickle.dump(fitness_list, open(f"./trained_chromosomes/fitness_list.p", "wb"))
 
     udp.plot(chromosome, plot_modes=True, plot_mode_efficiency=True)
     udp.pretty(chromosome)
