@@ -15,6 +15,8 @@ DATA_PATH_TRAIN = "./autoencoder/training_dataset/train_mode_view_dataset.p"
 DATA_PATH_VAL = "./autoencoder/training_dataset/val_mode_view_dataset.p"
 PCA_MODEL = "./clustering/experiments/pca.p"
 
+K = 10
+
 
 class ClusteringTerrain:
 
@@ -69,15 +71,17 @@ class ClusteringTerrain:
         self.load_trained_autoencoder()
         self.get_latent_representation()
 
-        if not self.groupby_scenario:
-            if os.path.exists(PCA_MODEL):
-                pca_model = pickle.load(open(PCA_MODEL, "rb"))
+        if os.path.exists(PCA_MODEL):
+            pca_model = pickle.load(open(PCA_MODEL, "rb"))
+        else:
+            if self.groupby_scenario:
+                raise ValueError("pca model does not exists")
             else:
-                pca_model = PCA(n_components=20)
+                pca_model = PCA(n_components=50)
                 pca_model.fit(self.latent_representation)
                 pickle.dump(pca_model, open(PCA_MODEL, "wb"))
 
-            self.latent_representation = pca_model.transform(self.latent_representation)
+        self.latent_representation = pca_model.transform(self.latent_representation)[:, :K]
 
         if self.config.clustering_algo == "kmeans":
             cluster_model = KMeans(n_clusters=self.config.n_clusters, random_state=self.random_state, n_init="auto")

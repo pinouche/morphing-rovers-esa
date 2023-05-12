@@ -6,7 +6,18 @@ from morphing_rovers.src.mode_optimization.optimization.optimization import Opti
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 from morphing_rovers.morphing_udp import MAX_TIME
 from morphing_rovers.src.mode_optimization.utils import velocity_function
+from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
 
+
+def create_random_chromosome():
+
+    chromosome = morphing_rover_UDP().example()
+    rover = Rover(chromosome)
+    control = rover.Control
+    masks_tensors = [torch.rand(11, 11, requires_grad=True) for _ in range(4)]
+    chromosome = update_chromosome_with_mask(masks_tensors, control.chromosome, always_switch=True)
+
+    return masks_tensors, chromosome
 
 def get_best_mode(mode_view, masks_list):
 
@@ -63,7 +74,7 @@ def adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, be
         mode_trainer = OptimizeMask(options, data=cluster_trainer_output)
         mode_trainer.train()
         new_average_speed = mode_trainer.weighted_average
-        # print(f"The weighted average speed is: {new_average_speed} and the cluster sizes are {np.unique(cluster_trainer_output[1], return_counts=True)}")
+        print(f"The weighted average speed is: {new_average_speed} and the cluster sizes are {np.unique(cluster_trainer_output[1], return_counts=True)}")
         masks_tensors = mode_trainer.optimized_masks
 
         if new_average_speed > best_average_speed:
@@ -80,7 +91,7 @@ def adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, be
 
         iteration_number += 1
 
-    return masks_tensors
+    return masks_tensors, cluster_trainer_output
 
 
 def update_chromosome_with_mask(masks_tensors, chromosome, always_switch=True):
