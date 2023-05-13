@@ -74,7 +74,7 @@ def adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, be
         mode_trainer = OptimizeMask(options, data=cluster_trainer_output)
         mode_trainer.train()
         new_average_speed = mode_trainer.weighted_average
-        print(f"The weighted average speed is: {new_average_speed} and the cluster sizes are {np.unique(cluster_trainer_output[1], return_counts=True)}")
+        # print(f"The weighted average speed is: {new_average_speed} and the cluster sizes are {np.unique(cluster_trainer_output[1], return_counts=True)}")
         masks_tensors = mode_trainer.optimized_masks
 
         if new_average_speed > best_average_speed:

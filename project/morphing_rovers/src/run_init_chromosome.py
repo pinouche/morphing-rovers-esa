@@ -85,29 +85,44 @@ if __name__ == "__main__":
 
                 # clustering
                 cluster_trainer = ClusteringTerrain(options, data=path_data, groupby_scenario=CLUSTERBY_SCENARIO,
-                                                    random_state=j+100)
+                                                    random_state=j+1000)
                 cluster_trainer.run()
                 cluster_trainer_output = cluster_trainer.output
+                scenarios_id = cluster_trainer.scenarios_id
+
+                if CLUSTERBY_SCENARIO:
+                    # scenarios = np.arange(0, 30, 1)
+                    # dict_replace = dict(zip(scenarios, cluster_trainer_output[-1]))
+                    # clusters = np.array([dict_replace[k] for k in scenarios_id])
+                    c = [cluster_trainer_output[1], cluster_trainer_output[-1]]
+                else:
+                    c = [cluster_trainer_output[0], cluster_trainer_output[-1]]
 
                 # optimize modes
-                mode_trainer = OptimizeMask(options, data=cluster_trainer_output)
+                mode_trainer = OptimizeMask(options, data=c)
                 mode_trainer.train()
                 best_average_speed = mode_trainer.weighted_average
                 masks_tensors = mode_trainer.optimized_masks
 
-                # if len(np.unique(cluster_trainer_output[1])) != 1:
-                #     masks_tensors, cluster_trainer_output = adjust_clusters_and_modes(options, cluster_trainer_output,
-                #                                                                       masks_tensors,
-                #                                                                       best_average_speed)
-                #
-                #     if CLUSTERBY_SCENARIO:
-                #         scenarios = np.arange(0, 30, 1)
-                #         dict_replace = dict(zip(scenarios, cluster_trainer_output[-1]))
-                #         cluster_trainer_output[-1] = np.array([dict_replace[k] for k in cluster_trainer.scenarios_id])
+                if CLUSTERBY_SCENARIO:
+                    # here, we want to adjust the scenarios' average
+                    ################################################### remove this to use the average only
+                    masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
+                    scenarios = np.arange(0, 30, 1)
+                    dict_replace = dict(zip(scenarios, c[-1]))
+                    clusters = np.array([dict_replace[k] for k in scenarios_id])
+                    c[-1] = clusters
+                    c[0] = cluster_trainer_output[0]
+                    #########################################
+
+                    mode_trainer = OptimizeMask(options, data=c)
+                    mode_trainer.train()
+                    best_average_speed = mode_trainer.weighted_average
+                    masks_tensors = mode_trainer.optimized_masks
 
                 # updated chromosome
                 chromosome = update_chromosome_with_mask(masks_tensors,
-                                                        network_trainer.udp.rover.Control.chromosome,
+                                                         network_trainer.udp.rover.Control.chromosome,
                                                          always_switch=True)
 
                 # compute fitness
