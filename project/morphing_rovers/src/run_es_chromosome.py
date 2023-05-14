@@ -19,11 +19,6 @@ if __name__ == "__main__":
     else:
         raise FileNotFoundError
 
-    chromosome[628] = 0.0
-
-    # udp = morphing_rover_UDP()
-    # chromosome = udp.example()
-
     es_trainer = EvolutionStrategies(options, chromosome)
     es_trainer.fit()
 
