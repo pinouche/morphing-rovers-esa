@@ -5,7 +5,7 @@ import os
 from morphing_rovers.morphing_udp import morphing_rover_UDP
 from morphing_rovers.src.evolution_strategies.evolution_strategies import EvolutionStrategies
 
-PATH_CHROMOSOME = "../trained_chromosomes/chromosome_iteration_0.p"
+PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_2.0268.p"
 
 
 if __name__ == "__main__":
@@ -14,8 +14,8 @@ if __name__ == "__main__":
     options = options.parse_args()
 
     # load pre-trained chromosome
-    if os.path.exists("./trained_chromosomes/chromosome_iteration_0.p"):
-        chromosome = pickle.load(open("./trained_chromosomes/chromosome_iteration_0.p", "rb"))
+    if os.path.exists(PATH_CHROMOSOME):
+        chromosome = pickle.load(open(PATH_CHROMOSOME, "rb"))
     else:
         raise FileNotFoundError
 
