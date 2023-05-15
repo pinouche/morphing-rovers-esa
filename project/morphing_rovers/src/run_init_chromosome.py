@@ -13,7 +13,7 @@ from morphing_rovers.src.neural_network_supervised.optimization import OptimizeN
 from utils import init_modes, adjust_clusters_and_modes, update_chromosome_with_mask, create_random_chromosome
 
 PATH_CHROMOSOME = "./trained_chromosomes/chromosome_iteration_1.p"
-N_ITERATIONS_FULL_RUN = 20
+N_ITERATIONS_FULL_RUN = 10
 N_STEPS_TO_RUN = 100
 CLUSTERBY_SCENARIO = True
 
@@ -53,10 +53,10 @@ if __name__ == "__main__":
     # fitness = udp.fitness(chromosome)[0]
     # print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
-    best_fitness = np.inf
     fitness_list = [[] for _ in range(N_ITERATIONS_FULL_RUN)]
     for j in range(N_ITERATIONS_FULL_RUN):
-
+        print(f"COMPUTING FOR RUN NUMBER {j}")
+        best_fitness = np.inf
         # get a new randomly generated chromosome to start a new round of optimization
         if j > 0:
             masks_tensors, chromosome = create_random_chromosome()
@@ -85,15 +85,12 @@ if __name__ == "__main__":
 
                 # clustering
                 cluster_trainer = ClusteringTerrain(options, data=path_data, groupby_scenario=CLUSTERBY_SCENARIO,
-                                                    random_state=j+1000)
+                                                    random_state=j)
                 cluster_trainer.run()
                 cluster_trainer_output = cluster_trainer.output
                 scenarios_id = cluster_trainer.scenarios_id
 
                 if CLUSTERBY_SCENARIO:
-                    # scenarios = np.arange(0, 30, 1)
-                    # dict_replace = dict(zip(scenarios, cluster_trainer_output[-1]))
-                    # clusters = np.array([dict_replace[k] for k in scenarios_id])
                     c = [cluster_trainer_output[1], cluster_trainer_output[-1]]
                 else:
                     c = [cluster_trainer_output[0], cluster_trainer_output[-1]]
