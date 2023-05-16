@@ -15,7 +15,7 @@ DATA_PATH_TRAIN = "./autoencoder/training_dataset/train_mode_view_dataset.p"
 DATA_PATH_VAL = "./autoencoder/training_dataset/val_mode_view_dataset.p"
 PCA_MODEL = "./clustering/experiments/pca.p"
 
-K = 10
+K = 2
 
 
 class ClusteringTerrain:
@@ -96,10 +96,10 @@ class ClusteringTerrain:
 
         print("CLUSTERS COUNTS", np.unique(clusters, return_counts=True))
 
-        if self.groupby_scenario:
-            scenarios = np.arange(0, 30, 1)
-            dict_replace = dict(zip(scenarios, clusters))
-            clusters = np.array([dict_replace[k] for k in self.scenarios_id])
+        # if self.groupby_scenario:
+        #     scenarios = np.arange(0, 30, 1)
+        #     dict_replace = dict(zip(scenarios, clusters))
+        #     clusters = np.array([dict_replace[k] for k in self.scenarios_id])
 
-        self.output = [self.views, clusters]
+        self.output = [self.views, self.data, clusters]
         # pickle.dump((self.data, self.latent_representation, clusters), open("./experiments/clusters.p", "wb"))

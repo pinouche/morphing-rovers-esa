@@ -2,13 +2,15 @@ import numpy as np
 import copy
 import yaml
 import random
+import pickle
 
 from morphing_rovers.src.evolution_strategies.utils import get_noise, perturb_chromosome, compute_fitness
 from morphing_rovers.morphing_udp import morphing_rover_UDP
 from morphing_rovers.utils import Config
 
 
-N_PARAM_TO_PERTURB = 19126
+# 19126
+N_PARAM_TO_PERTURB = 1000
 
 
 class EvolutionStrategies:
@@ -43,13 +45,14 @@ class EvolutionStrategies:
 
         list_noise = []
         list_fitness = []
-        # compute fitness for each network in the population
-        random_indices = random.sample(range(N_PARAM_TO_PERTURB), 1)
+
+        # random_indices = random.sample(range(len(self.chromosome)), N_PARAM_TO_PERTURB)
         for p in range(self.pop_size):
+            random_indices = random.sample(range(19126), N_PARAM_TO_PERTURB)
             temporary_chromosome = copy.deepcopy(self.chromosome)
 
             if p % 10 == 0:
-                print(f"Computing fitness for individual number {p}")
+                print(f"Computing for individual number {p}")
 
             # get the noise
             noise = get_noise(len(random_indices))
@@ -59,18 +62,20 @@ class EvolutionStrategies:
             temporary_chromosome[random_indices] = chromosome_to_perturb
 
             # compute the fitness
-            f_obj = compute_fitness(temporary_chromosome, self.udp)[0]
+            f_obj = round(compute_fitness(temporary_chromosome, self.udp)[0], 4)
+            print(f_obj)
             list_fitness.append(f_obj)
             list_noise.append(noise)
 
             if f_obj < self.best_fitness:
                 print(f"new best fitness is {f_obj}")
+                pickle.dump(temporary_chromosome, open(f"./trained_chromosomes/chromosome_fitness_fine_tuned{f_obj}.p", "wb"))
                 self.best_chromosome = temporary_chromosome
                 self.best_fitness = f_obj
 
-        list_weighted_noise = np.array([list_fitness[i]*list_noise[i] for i in range(len(list_fitness))])
-
         self.chromosome = self.best_chromosome
+
+        # list_weighted_noise = np.array([list_fitness[i]*list_noise[i] for i in range(len(list_fitness))])
 
         # compute update step
         # gradient_estimate = np.mean(np.array(list_weighted_noise), axis=0)

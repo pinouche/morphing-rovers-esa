@@ -5,7 +5,7 @@ import os
 from morphing_rovers.morphing_udp import morphing_rover_UDP
 from morphing_rovers.src.evolution_strategies.evolution_strategies import EvolutionStrategies
 
-PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_2.0268.p"
+PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_2.0049.p"
 
 
 if __name__ == "__main__":

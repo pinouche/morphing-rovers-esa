@@ -8,7 +8,7 @@ from morphing_rovers.src.utils import fitness_wrapper
 # parameters
 POP_SIZE = 100
 SIGMA = 0.0001
-MAXITER = 2
+MAXITER = 10
 
 N_PARAMETERS = 19126
 N_HYPERPARAMETERS = 7
@@ -24,7 +24,6 @@ if __name__ == "__main__":
 
     # create random noise
     pop_array = np.transpose(np.repeat(np.expand_dims(chromosome, 1), POP_SIZE, 1))
-    print("SHAPE POP", pop_array.shape)
 
     noise = np.random.randn(POP_SIZE, 19126)*SIGMA
     pop_array[:, :N_PARAMETERS] = pop_array[:, :N_PARAMETERS] + noise
@@ -33,6 +32,6 @@ if __name__ == "__main__":
     bounds = list(zip(lower_bounds, higher_bounds))
 
     result = differential_evolution(func=fitness_wrapper, bounds=bounds, maxiter=MAXITER, init=pop_array,
-                                    polish=False, vectorized=False, seed=1)
+                                    polish=False, recombination=0, tol=0.001, vectorized=False, seed=1)
 
     print(result)

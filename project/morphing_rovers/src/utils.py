@@ -54,9 +54,10 @@ def init_modes(options, chromosome):
     cluster_trainer = ClusteringTerrain(options, data=path_data, groupby_scenario=True, random_state=0)
     cluster_trainer.run()
     cluster_trainer_output = cluster_trainer.output
+    c = [cluster_trainer_output[1], cluster_trainer_output[-1]]
 
     # optimize modes
-    mode_trainer = OptimizeMask(options, data=cluster_trainer_output)
+    mode_trainer = OptimizeMask(options, data=c)
     mode_trainer.train()
     average_speed = mode_trainer.weighted_average
     masks_tensors = mode_trainer.optimized_masks
@@ -83,7 +84,7 @@ def adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, be
             best_average_speed = new_average_speed
             early_stopping_counter = 0
 
-        if early_stopping_counter == 5:
+        if early_stopping_counter == 1:
             break
 
         if iteration_number == 10:

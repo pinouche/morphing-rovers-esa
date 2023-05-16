@@ -8,21 +8,21 @@ encoded_space_dim: 50
 fc2_input_dim: 256
 
 # clustering_algorithm
-clustering_algo: "gmm"
+clustering_algo: "kmeans"
 n_clusters: 4
 
 # for mask optimization
-n_iter_mask_optimization: 250
-learning_rate_mask_optimization: 0.05
+n_iter_mask_optimization: 300 # 250 normally
+learning_rate_mask_optimization: 0.02 # 0.05 normally
 
-# for supervised learning using the angle
-n_iter_supervised_learning: 100
-learning_rate_supervised_learning: 0.002
+# for supervised learning using the angle (path optimization)
+n_iter_supervised_learning: 100 # 100 normally
+learning_rate_supervised_learning: 0.002 # 0.002 normally
 
 # for the evolution strategies
-es_sigma: 0.01
+es_sigma: 0.0001
 es_lr: 0.0001
-es_pop_size: 200
+es_pop_size: 1000
 es_epochs: 100
 n_params_to_perturb: 19126
 

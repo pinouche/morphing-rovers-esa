@@ -49,21 +49,21 @@ def distance_to_velocity(x):
     return 1. / (1 + x ** 3)
 
 
-def get_init_masks_from_path(options):
-
-    masks = morphing_rover_UDP().example()[:11*11*4]
-    control = pickle.load(open("../neural_network_supervised/optimized_control.p", "rb"))
-    # set-up the chromosome
-    chromosome = np.concatenate((masks, control.chromosome))
-    chromosome[628] = 10000  # set switching mode always to be on
-
-    network_trainer = OptimizeNetworkSupervised(options, chromosome)
-    network_trainer.train(MAX_TIME, train=False)
-    path_data = network_trainer.udp.rover.cluster_data
-
-    # clustering
-    cluster_trainer = ClusteringTerrain(options, path_data)
-    cluster_trainer.run()
-    cluster_trainer_output = cluster_trainer.output
-
-    return cluster_trainer_output
+# def get_init_masks_from_path(options):
+#
+#     masks = morphing_rover_UDP().example()[:11*11*4]
+#     control = pickle.load(open("../neural_network_supervised/optimized_control.p", "rb"))
+#     # set-up the chromosome
+#     chromosome = np.concatenate((masks, control.chromosome))
+#     chromosome[628] = 10000  # set switching mode always to be on
+#
+#     network_trainer = OptimizeNetworkSupervised(options, chromosome)
+#     network_trainer.train(MAX_TIME, train=False)
+#     path_data = network_trainer.udp.rover.cluster_data
+#
+#     # clustering
+#     cluster_trainer = ClusteringTerrain(options, path_data)
+#     cluster_trainer.run()
+#     cluster_trainer_output = cluster_trainer.output
+#
+#     return cluster_trainer_output
