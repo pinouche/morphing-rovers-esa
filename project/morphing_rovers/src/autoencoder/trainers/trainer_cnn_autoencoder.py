@@ -10,8 +10,8 @@ from morphing_rovers.src.autoencoder.metrics.reconstruction import Reconstructio
 
 class TerrainTrainer(Trainer):
     def create_data(self):
-        self.train_dataset = CompetitionDataset(mode='train')
-        self.val_dataset = CompetitionDataset(mode='val')
+        self.train_dataset = CompetitionDataset(self.options, mode='train')
+        self.val_dataset = CompetitionDataset(self.options, mode='val')
 
         self.train_dataloader = DataLoader(self.train_dataset, self.config.batch_size, shuffle=True)
         self.val_dataloader = DataLoader(self.val_dataset, self.config.batch_size, shuffle=False)

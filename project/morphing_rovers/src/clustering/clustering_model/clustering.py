@@ -15,7 +15,7 @@ DATA_PATH_TRAIN = "./autoencoder/training_dataset/train_mode_view_dataset.p"
 DATA_PATH_VAL = "./autoencoder/training_dataset/val_mode_view_dataset.p"
 PCA_MODEL = "./clustering/experiments/pca.p"
 
-K = 2
+K = 50
 
 
 class ClusteringTerrain:
@@ -89,7 +89,8 @@ class ClusteringTerrain:
 
         elif self.config.clustering_algo == "gmm":
             cluster_model = GaussianMixture(n_components=self.config.n_clusters, random_state=self.random_state)
-            clusters = cluster_model.fit_predict(self.latent_representation)
+            cluster_model.fit(self.latent_representation)
+            clusters = cluster_model.predict(self.latent_representation)
 
         else:
             raise ValueError(f"clustering algo {self.config.clustering_algo} not supported.")

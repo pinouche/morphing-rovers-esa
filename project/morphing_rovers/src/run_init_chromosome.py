@@ -27,6 +27,7 @@ if __name__ == "__main__":
 
     udp = morphing_rover_UDP()
 
+    best_fitness = np.inf
     fitness_list = [[] for _ in range(N_ITERATIONS_FULL_RUN)]
     for j in range(N_ITERATIONS_FULL_RUN):
         print(f"COMPUTING FOR RUN NUMBER {j}")
@@ -104,7 +105,6 @@ if __name__ == "__main__":
                                                          always_switch=True)
 
                 # compute fitness
-                print(len(chromosome))
                 fitness = udp.fitness(chromosome)[0]
                 fitness_list[j].append(fitness)
                 print("FITNESS AFTER MODE OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed))

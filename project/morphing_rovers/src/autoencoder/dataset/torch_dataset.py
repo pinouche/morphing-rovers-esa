@@ -15,14 +15,14 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class CompetitionDataset(Dataset):
 
-    def __init__(self, mode='train'):
+    def __init__(self, options, mode='train'):
 
         data_exists = os.path.exists(DATA_PATH_TRAIN) and os.path.exists(DATA_PATH_VAL)
 
         if data_exists:
             self.input_data = pickle.load(open(f"./training_dataset/{mode}_mode_view_dataset.p", "rb"))
         else:
-            create_mode_views_dataset(N_SAMPLES, VAL_SIZE)
+            create_mode_views_dataset(options, N_SAMPLES, VAL_SIZE)
             self.input_data = pickle.load(open(f"./training_dataset/{mode}_mode_view_dataset.p", "rb"))
 
         print("DATASET SHAPE", self.input_data.shape)
