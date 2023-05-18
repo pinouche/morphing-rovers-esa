@@ -11,11 +11,11 @@ from morphing_rovers.src.clustering.clustering_model.clustering import Clusterin
 from morphing_rovers.src.mode_optimization.optimization.optimization import OptimizeMask
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
-from utils import init_modes, adjust_clusters_and_modes, update_chromosome_with_mask, create_random_chromosome
+from utils import adjust_clusters_and_modes, update_chromosome_with_mask, create_random_chromosome
 
-PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_fine_tuned.p"
+PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_fine_tuned_does_not_exist.p"
 N_ITERATIONS_FULL_RUN = 20
-N_STEPS_TO_RUN = 200
+N_STEPS_TO_RUN = 100
 CLUSTERBY_SCENARIO = True
 
 
@@ -87,9 +87,12 @@ if __name__ == "__main__":
                     # here, we want to adjust the scenarios' average
                     ################################################### remove this to use the average only
                     masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
-                    scenarios = np.arange(0, 30, 1)
-                    dict_replace = dict(zip(scenarios, c[-1]))
+                    # scenarios = np.arange(0, 30, 1)
+                    # print("C[-1]", c[-1], "scenarios_id", scenarios_id)
+                    dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
+                    # print("dict_replace", dict_replace)
                     clusters = np.array([dict_replace[k] for k in scenarios_id])
+                    # print("clusters", clusters)
                     c[-1] = clusters
                     c[0] = cluster_trainer_output[0]
                     #########################################

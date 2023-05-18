@@ -24,7 +24,7 @@ from torchvision.transforms.functional import gaussian_blur, rotate
 # maps: './myfolder/Maps'
 # coordinates: './myfolder/coordinates.txt'
 # example chromosome: './myfolder/example_rover.npy'
-PATH = os.path.join("..", "..", "data")
+PATH = os.path.join("..", "data")
 
 # Parameters for the rover modes
 MASK_SIZE = 11
@@ -570,13 +570,15 @@ class Rover:
         distance_to_sample = distance_vector.norm() / original_distance
         angle_diff = minimal_angle_diff(angle_to_sample, self.angle)
 
-        rover_state = torch.Tensor([self.mode_efficiency, self.cooldown / MODE_COOLDOWN, angle_diff / np.pi, \
+        rover_state = torch.Tensor([self.mode_efficiency, self.cooldown / MODE_COOLDOWN, angle_diff / np.pi,
                                     float(distance_to_sample),
                                     self.angle / np.pi / 2] + self.onehot_representation_of_mode)
 
-        self.training_data.append(([rover_view.numpy(force=True), rover_state.numpy(force=True), self.latent_state.numpy(force=True)], [self.angle, angle_diff]))
+        self.training_data.append(([rover_view.numpy(force=True), rover_state.numpy(force=True),
+                                    self.latent_state.numpy(force=True)], [self.angle, angle_diff]))
 
         switching_mode, angular_change, self.latent_state = self.Control(rover_view, rover_state, self.latent_state)
+
         self.cluster_data.append((mode_view, self.current_mode, scenario_number))
 
         # Save angular velocity change obtained from neural network
@@ -757,7 +759,8 @@ class morphing_rover_UDP:
         # Runs the scenario for X number of timesteps, where X is the max time / the time increment
         for timestep in range(0, num_steps_to_run):
             rover_view, mode_view = self.env.extract_local_view(self.rover.position, self.rover.angle, map_number)
-            self.rover.update_rover_state(rover_view, mode_view, distance_vector, original_distance, self.scenario_number)
+            self.rover.update_rover_state(rover_view, mode_view, distance_vector, original_distance,
+                                          self.scenario_number)
             distance_vector = sample_position - self.rover.position
             current_distance = distance_vector.norm()
 
@@ -770,6 +773,5 @@ class morphing_rover_UDP:
                 completed_scenarios += 1
                 break
 
-            if timestep == num_steps_to_run-1:
+            if timestep == num_steps_to_run - 1:
                 self.rover.overall_distance.append(current_distance)
-

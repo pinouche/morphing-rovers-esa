@@ -107,6 +107,7 @@ def update_chromosome_with_mask(masks_tensors, chromosome, always_switch=True):
 
     return chromosome
 
+
 def fitness_wrapper(x):
 
     func = morphing_rover_UDP().fitness

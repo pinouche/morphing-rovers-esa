@@ -41,6 +41,7 @@ class EvolutionStrategies:
     def update(self) -> None:
 
         self.best_fitness = compute_fitness(self.chromosome, self.udp)[0]
+        self.udp.pretty(self.chromosome)
         print(f"The current fitness is {self.best_fitness}")
 
         list_noise = []

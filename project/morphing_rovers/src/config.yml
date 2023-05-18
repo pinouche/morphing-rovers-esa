@@ -1,5 +1,5 @@
 # parameter for the CNN autoencoder
-learning_rate: 0.0002
+learning_rate: 0.00015
 weight_decay: 0.000
 batch_size: 512
 n_epochs: 1000
@@ -8,12 +8,12 @@ encoded_space_dim: 50
 fc2_input_dim: 256
 
 # clustering_algorithm
-clustering_algo: "gmm"
+clustering_algo: "kmeans"
 n_clusters: 4
 
 # for mask optimization
-n_iter_mask_optimization: 300 # 250 normally
-learning_rate_mask_optimization: 0.02 # 0.05 normally
+n_iter_mask_optimization: 250 # 250 normally
+learning_rate_mask_optimization: 0.05 # 0.05 normally
 
 # for supervised learning using the angle (path optimization)
 n_iter_supervised_learning: 100 # 100 normally

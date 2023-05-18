@@ -15,12 +15,12 @@ DATA_PATH_TRAIN = "./autoencoder/training_dataset/train_mode_view_dataset.p"
 DATA_PATH_VAL = "./autoencoder/training_dataset/val_mode_view_dataset.p"
 PCA_MODEL = "./clustering/experiments/pca.p"
 
-K = 50
+K = 20
 
 
 class ClusteringTerrain:
 
-    def __init__(self, options, data=None, groupby_scenario = False, random_state=None):
+    def __init__(self, options, data=None, groupby_scenario=False, random_state=None):
         self.options = options
         self.model = None
 
@@ -58,7 +58,7 @@ class ClusteringTerrain:
 
             if self.groupby_scenario:
                 self.scenarios_id = np.array([d[-1] for d in self.data])
-                self.data = torch.stack([self.views[self.scenarios_id == i].mean(dim=0) for i in range(30)])
+                self.data = torch.stack([self.views[self.scenarios_id == i].mean(dim=0) for i in np.unique(self.scenarios_id)])
 
             else:
                 self.data = self.views
