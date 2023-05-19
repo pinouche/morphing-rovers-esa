@@ -2,13 +2,13 @@
 learning_rate: 0.00015
 weight_decay: 0.000
 batch_size: 512
-n_epochs: 1000
+n_epochs: 1500
 
 encoded_space_dim: 50
 fc2_input_dim: 256
 
 # clustering_algorithm
-clustering_algo: "kmeans"
+clustering_algo: "gmm"
 n_clusters: 4
 
 # for mask optimization

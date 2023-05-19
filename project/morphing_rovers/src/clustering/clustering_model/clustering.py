@@ -88,7 +88,8 @@ class ClusteringTerrain:
             clusters = cluster_model.fit_predict(self.latent_representation)
 
         elif self.config.clustering_algo == "gmm":
-            cluster_model = GaussianMixture(n_components=self.config.n_clusters, random_state=self.random_state)
+            cluster_model = GaussianMixture(n_components=self.config.n_clusters, init_params='kmeans++',
+                                            random_state=self.random_state)
             cluster_model.fit(self.latent_representation)
             clusters = cluster_model.predict(self.latent_representation)
 

@@ -19,6 +19,7 @@ def create_random_chromosome():
 
     return masks_tensors, chromosome
 
+
 def get_best_mode(mode_view, masks_list):
 
     velocities = []

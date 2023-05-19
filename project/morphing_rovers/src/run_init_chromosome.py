@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import torch
 import os
+import multiprocessing
 import random
 from loguru import logger
 
@@ -14,12 +15,14 @@ from morphing_rovers.src.neural_network_supervised.optimization import OptimizeN
 from utils import adjust_clusters_and_modes, update_chromosome_with_mask, create_random_chromosome
 
 PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_fine_tuned_does_not_exist.p"
-N_ITERATIONS_FULL_RUN = 20
-N_STEPS_TO_RUN = 100
+N_ITERATIONS_FULL_RUN = 10
+N_STEPS_TO_RUN = 200
 CLUSTERBY_SCENARIO = True
 
 
-if __name__ == "__main__":
+def func(i, return_dict):
+
+    torch.manual_seed(i+10) # add 10 every time to add randomness
 
     options = argparse.ArgumentParser(description='Model config')
     options.add_argument('--config', type=str, default='', help='Path of the config file')
@@ -27,6 +30,7 @@ if __name__ == "__main__":
 
     udp = morphing_rover_UDP()
 
+    return_dict[i] = []
     best_fitness = np.inf
     fitness_list = [[] for _ in range(N_ITERATIONS_FULL_RUN)]
     for j in range(N_ITERATIONS_FULL_RUN):
@@ -35,7 +39,9 @@ if __name__ == "__main__":
         if os.path.exists(PATH_CHROMOSOME):
             chromosome = pickle.load(open(PATH_CHROMOSOME, "rb"))
             # initial run to get the dataset for clustering
-            masks_tensors = [torch.tensor(np.reshape(chromosome[11**2*i:11**2*(i+1)], (11, 11)), requires_grad=True) for i in range(4)]
+            masks_tensors = [
+                torch.tensor(np.reshape(chromosome[11 ** 2 * i:11 ** 2 * (i + 1)], (11, 11)), requires_grad=True) for i
+                in range(4)]
             # masks_tensors, cluster_trainer_output, best_average_speed = init_modes(options, chromosome)
         else:
             masks_tensors, chromosome = create_random_chromosome()
@@ -43,7 +49,7 @@ if __name__ == "__main__":
         fitness = udp.fitness(chromosome)[0]
         print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
-        for n_iter in range(1, N_STEPS_TO_RUN+1):
+        for n_iter in range(1, N_STEPS_TO_RUN + 1):
             if n_iter % 1 == 0:
                 print(f"Optimizing network for the {n_iter} first rover's steps")
 
@@ -62,8 +68,10 @@ if __name__ == "__main__":
 
                 if fitness < best_fitness:
                     print("NEW BEST FITNESS!!")
-                    pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
+                    pickle.dump(chromosome,
+                                open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
                     best_fitness = fitness
+                    return_dict[i].append((chromosome, fitness))
 
                 # clustering
                 cluster_trainer = ClusteringTerrain(options, data=path_data, groupby_scenario=CLUSTERBY_SCENARIO,
@@ -114,11 +122,32 @@ if __name__ == "__main__":
 
                 if fitness < best_fitness:
                     print("NEW BEST FITNESS!!")
-                    pickle.dump(chromosome, open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
+                    pickle.dump(chromosome,
+                                open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
                     best_fitness = fitness
+                    return_dict[i].append((chromosome, fitness))
 
                 pickle.dump(fitness_list, open(f"./trained_chromosomes/fitness_list.p", "wb"))
 
-    udp.plot(chromosome, plot_modes=True, plot_mode_efficiency=True)
-    udp.pretty(chromosome)
+    # udp.plot(chromosome, plot_modes=True, plot_mode_efficiency=True)
+    # udp.pretty(chromosome)
 
+
+if __name__ == "__main__":
+
+    manager = multiprocessing.Manager()
+    return_dict = manager.dict()
+
+    num_processes = multiprocessing.cpu_count()  # Get the number of available CPU cores
+
+    p = [multiprocessing.Process(target=func, args=(i, return_dict))
+         for i in range(2)]
+
+    for proc in p:
+        proc.start()
+    for proc in p:
+        proc.join()
+
+    individuals_fitness = return_dict.values()
+
+    print(individuals_fitness)
