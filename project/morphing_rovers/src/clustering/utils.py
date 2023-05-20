@@ -1,5 +1,6 @@
 import os
 import torch
+import numpy as np
 
 from morphing_rovers.src.autoencoder.models.model import Autoencoder
 
@@ -17,4 +18,20 @@ def load_checkpoint(session_name: str = "session_1", latent_dim: int = 50, fc_di
     # print('Loaded model and optimiser weights from {}\n'.format(checkpoint_name))
 
     return model
+
+
+def swap_most_and_least_occurring_clusters(clusters):
+    counts = np.unique(clusters, return_counts=True)
+    max_index = counts[0][np.argmax(counts[1])]  # most occurring
+
+    dict_swap = {max_index: 0, 0: max_index}
+
+    new_arr = []
+
+    for v in clusters:
+        if v in dict_swap.keys():
+            v = dict_swap[v]
+        new_arr.append(v)
+
+    return new_arr
 

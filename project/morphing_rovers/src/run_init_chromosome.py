@@ -15,8 +15,8 @@ from morphing_rovers.src.neural_network_supervised.optimization import OptimizeN
 from utils import adjust_clusters_and_modes, update_chromosome_with_mask, create_random_chromosome
 
 PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_fine_tuned_does_not_exist.p"
-N_ITERATIONS_FULL_RUN = 10
-N_STEPS_TO_RUN = 200
+N_ITERATIONS_FULL_RUN = 20
+N_STEPS_TO_RUN = 100
 CLUSTERBY_SCENARIO = True
 
 

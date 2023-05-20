@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 
 from morphing_rovers.src.autoencoder.utils import create_mode_views_dataset
 
-N_SAMPLES = 500
+N_SAMPLES = 1000
 VAL_SIZE = 0.2
 DATA_PATH_TRAIN = "./training_dataset/train_mode_view_dataset.p"
 DATA_PATH_VAL = "./training_dataset/val_mode_view_dataset.p"

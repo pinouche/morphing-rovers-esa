@@ -9,7 +9,7 @@ from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans
 
 from morphing_rovers.utils import Config
-from morphing_rovers.src.clustering.utils import load_checkpoint
+from morphing_rovers.src.clustering.utils import load_checkpoint, swap_most_and_least_occurring_clusters
 
 DATA_PATH_TRAIN = "./autoencoder/training_dataset/train_mode_view_dataset.p"
 DATA_PATH_VAL = "./autoencoder/training_dataset/val_mode_view_dataset.p"
@@ -84,11 +84,12 @@ class ClusteringTerrain:
         self.latent_representation = pca_model.transform(self.latent_representation)[:, :K]
 
         if self.config.clustering_algo == "kmeans":
-            cluster_model = KMeans(n_clusters=self.config.n_clusters, random_state=self.random_state, n_init="auto")
+            cluster_model = KMeans(n_clusters=self.config.n_clusters, random_state=self.random_state, init="k-means++",
+                                   n_init="auto")
             clusters = cluster_model.fit_predict(self.latent_representation)
 
         elif self.config.clustering_algo == "gmm":
-            cluster_model = GaussianMixture(n_components=self.config.n_clusters, init_params='kmeans++',
+            cluster_model = GaussianMixture(n_components=self.config.n_clusters, init_params='k-means++',
                                             random_state=self.random_state)
             cluster_model.fit(self.latent_representation)
             clusters = cluster_model.predict(self.latent_representation)
@@ -103,5 +104,6 @@ class ClusteringTerrain:
         #     dict_replace = dict(zip(scenarios, clusters))
         #     clusters = np.array([dict_replace[k] for k in self.scenarios_id])
 
+        clusters = swap_most_and_least_occurring_clusters(clusters)
         self.output = [self.views, self.data, clusters]
         # pickle.dump((self.data, self.latent_representation, clusters), open("./experiments/clusters.p", "wb"))

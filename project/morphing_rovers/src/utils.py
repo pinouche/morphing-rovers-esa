@@ -4,9 +4,9 @@ import torch
 from morphing_rovers.src.clustering.clustering_model.clustering import ClusteringTerrain
 from morphing_rovers.src.mode_optimization.optimization.optimization import OptimizeMask
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
-from morphing_rovers.morphing_udp import MAX_TIME
 from morphing_rovers.src.mode_optimization.utils import velocity_function
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
+from morphing_rovers.src.clustering.utils import swap_most_and_least_occurring_clusters
 
 
 def create_random_chromosome():
@@ -92,6 +92,8 @@ def adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, be
             break
 
         iteration_number += 1
+
+    cluster_trainer_output[1] = swap_most_and_least_occurring_clusters(cluster_trainer_output[1])
 
     return masks_tensors, cluster_trainer_output
 

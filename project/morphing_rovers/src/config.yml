@@ -8,7 +8,7 @@ encoded_space_dim: 50
 fc2_input_dim: 256
 
 # clustering_algorithm
-clustering_algo: "gmm"
+clustering_algo: "kmeans"
 n_clusters: 4
 
 # for mask optimization
