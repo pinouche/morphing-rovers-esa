@@ -3,21 +3,24 @@ import copy
 import yaml
 import random
 import pickle
+import logging
 
 from morphing_rovers.src.evolution_strategies.utils import get_noise, perturb_chromosome, compute_fitness
 from morphing_rovers.morphing_udp import morphing_rover_UDP
 from morphing_rovers.utils import Config
 
 
-# 19126
-N_PARAM_TO_PERTURB = 1000
+N_PARAMETERS = 19126
+# N_PARAM_TO_PERTURB = 100
 
 
 class EvolutionStrategies:
 
     def __init__(self, options, chromosome):
+
         self.options = options
         self.chromosome = chromosome
+
         self.udp = morphing_rover_UDP()
         self.best_fitness = np.inf
         self.best_chromosome = self.chromosome
@@ -49,7 +52,8 @@ class EvolutionStrategies:
 
         # random_indices = random.sample(range(len(self.chromosome)), N_PARAM_TO_PERTURB)
         for p in range(self.pop_size):
-            random_indices = random.sample(range(19126), N_PARAM_TO_PERTURB)
+            n_param_to_pertub = random.sample(range(1000), 1)
+            random_indices = random.sample(range(N_PARAMETERS), n_param_to_pertub[0])
             temporary_chromosome = copy.deepcopy(self.chromosome)
 
             if p % 10 == 0:
@@ -74,21 +78,21 @@ class EvolutionStrategies:
                 self.best_chromosome = temporary_chromosome
                 self.best_fitness = f_obj
 
-        self.chromosome = self.best_chromosome
+            # self.chromosome = self.best_chromosome
 
-        # list_weighted_noise = np.array([list_fitness[i]*list_noise[i] for i in range(len(list_fitness))])
+        list_weighted_noise = np.array([list_fitness[i]*list_noise[i] for i in range(len(list_fitness))])
 
         # compute update step
-        # gradient_estimate = np.mean(np.array(list_weighted_noise), axis=0)
-        # update_step = gradient_estimate*(self.lr/self.sigma)
-        #
-        # print("GRADIENT SHAPE", gradient_estimate.shape, "UPDATE_STEP", update_step.shape)
-        #
-        # # update chromosome
-        # self.chromosome[random_indices] = (self.chromosome[random_indices] - update_step)
-        # fitness_update = compute_fitness(self.chromosome, self.udp)
-        #
-        # print(f"The updated solution's fitness is {fitness_update}")
+        gradient_estimate = np.mean(np.array(list_weighted_noise), axis=0)
+        update_step = gradient_estimate*(self.lr/self.sigma)
+
+        print("GRADIENT SHAPE", gradient_estimate.shape, "UPDATE_STEP", update_step.shape)
+
+        # update chromosome
+        self.chromosome[random_indices] = (self.chromosome[random_indices] - update_step)
+        fitness_update = compute_fitness(self.chromosome, self.udp)
+
+        print(f"The updated solution's fitness is {fitness_update}")
 
     def fit(self) -> None:
 

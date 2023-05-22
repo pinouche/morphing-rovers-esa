@@ -6,7 +6,7 @@ import os
 
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, AgglomerativeClustering
 
 from morphing_rovers.utils import Config
 from morphing_rovers.src.clustering.utils import load_checkpoint, swap_most_and_least_occurring_clusters
@@ -94,10 +94,12 @@ class ClusteringTerrain:
             cluster_model.fit(self.latent_representation)
             clusters = cluster_model.predict(self.latent_representation)
 
+        elif self.config.clustering_algo == "agg":
+            cluster_model = AgglomerativeClustering(n_clusters=self.config.n_clusters, linkage='ward')
+            clusters = cluster_model.fit_predict(self.latent_representation)
+
         else:
             raise ValueError(f"clustering algo {self.config.clustering_algo} not supported.")
-
-        print("CLUSTERS COUNTS", np.unique(clusters, return_counts=True))
 
         # if self.groupby_scenario:
         #     scenarios = np.arange(0, 30, 1)
@@ -105,5 +107,7 @@ class ClusteringTerrain:
         #     clusters = np.array([dict_replace[k] for k in self.scenarios_id])
 
         clusters = swap_most_and_least_occurring_clusters(clusters)
+        print("CLUSTERS COUNTS", np.unique(clusters, return_counts=True))
+
         self.output = [self.views, self.data, clusters]
         # pickle.dump((self.data, self.latent_representation, clusters), open("./experiments/clusters.p", "wb"))

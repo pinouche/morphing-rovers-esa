@@ -579,6 +579,7 @@ class Rover:
 
         switching_mode, angular_change, self.latent_state = self.Control(rover_view, rover_state, self.latent_state)
 
+        # if scenario_number in [8, 9, 11, 14, 16, 21, 23, 25]:
         self.cluster_data.append((mode_view, self.current_mode, scenario_number))
 
         # Save angular velocity change obtained from neural network

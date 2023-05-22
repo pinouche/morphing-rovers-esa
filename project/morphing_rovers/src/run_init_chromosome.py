@@ -14,15 +14,14 @@ from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 from utils import adjust_clusters_and_modes, update_chromosome_with_mask, create_random_chromosome
 
-PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_fine_tuned_does_not_exist.p"
+PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_does_not_exist.p"
 N_ITERATIONS_FULL_RUN = 20
-N_STEPS_TO_RUN = 100
+N_STEPS_TO_RUN = 50
 CLUSTERBY_SCENARIO = True
 
 
-def func(i, return_dict):
-
-    torch.manual_seed(i+10) # add 10 every time to add randomness
+def func(i, return_dict=None):
+    torch.manual_seed(i + 20)  # add 10 every time to add randomness
 
     options = argparse.ArgumentParser(description='Model config')
     options.add_argument('--config', type=str, default='', help='Path of the config file')
@@ -50,9 +49,13 @@ def func(i, return_dict):
         print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
         for n_iter in range(1, N_STEPS_TO_RUN + 1):
-            if n_iter % 1 == 0:
-                print(f"Optimizing network for the {n_iter} first rover's steps")
+            print(f"Optimizing network for the {n_iter} first rover's steps")
+            init_fitness = udp.fitness(chromosome)[0]
+            n = 1
+            if init_fitness < 2.10:
+                n = 10
 
+            for _ in range(n):
                 network_trainer = OptimizeNetworkSupervised(options, chromosome)
                 network_trainer.train(n_iter, train=True)
                 path_data = network_trainer.udp.rover.cluster_data
@@ -85,55 +88,59 @@ def func(i, return_dict):
                 else:
                     c = [cluster_trainer_output[0], cluster_trainer_output[-1]]
 
+                dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
+                clusters = np.array([dict_replace[k] for k in scenarios_id])
+
                 # optimize modes
-                mode_trainer = OptimizeMask(options, data=c)
+                mode_trainer = OptimizeMask(options, data=[cluster_trainer_output[0], clusters])
                 mode_trainer.train()
                 best_average_speed = mode_trainer.weighted_average
                 masks_tensors = mode_trainer.optimized_masks
 
-                if CLUSTERBY_SCENARIO:
-                    # here, we want to adjust the scenarios' average
-                    ################################################### remove this to use the average only
-                    masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
-                    # scenarios = np.arange(0, 30, 1)
-                    # print("C[-1]", c[-1], "scenarios_id", scenarios_id)
-                    dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
-                    # print("dict_replace", dict_replace)
-                    clusters = np.array([dict_replace[k] for k in scenarios_id])
-                    # print("clusters", clusters)
-                    c[-1] = clusters
-                    c[0] = cluster_trainer_output[0]
-                    #########################################
-
-                    mode_trainer = OptimizeMask(options, data=c)
-                    mode_trainer.train()
-                    best_average_speed = mode_trainer.weighted_average
-                    masks_tensors = mode_trainer.optimized_masks
+                # if CLUSTERBY_SCENARIO:
+                #     # here, we want to adjust the scenarios' average
+                #     ################################################### remove this to use the average only
+                #     masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
+                #     dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
+                #     clusters = np.array([dict_replace[k] for k in scenarios_id])
+                #     c[-1] = clusters
+                #     c[0] = cluster_trainer_output[0]
+                #     #########################################
+                #
+                #     mode_trainer = OptimizeMask(options, data=c)
+                #     mode_trainer.train()
+                #     best_average_speed = mode_trainer.weighted_average
+                #     masks_tensors = mode_trainer.optimized_masks
 
                 # updated chromosome
-                chromosome = update_chromosome_with_mask(masks_tensors,
-                                                         network_trainer.udp.rover.Control.chromosome,
-                                                         always_switch=True)
+                new_chromosome = update_chromosome_with_mask(masks_tensors,
+                                                             network_trainer.udp.rover.Control.chromosome,
+                                                             always_switch=True)
 
                 # compute fitness
-                fitness = udp.fitness(chromosome)[0]
+                fitness = udp.fitness(new_chromosome)[0]
                 fitness_list[j].append(fitness)
                 print("FITNESS AFTER MODE OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
                 if fitness < best_fitness:
                     print("NEW BEST FITNESS!!")
-                    pickle.dump(chromosome,
+                    pickle.dump(new_chromosome,
                                 open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
                     best_fitness = fitness
-                    return_dict[i].append((chromosome, fitness))
+                    return_dict[i].append((new_chromosome, fitness))
+                    chromosome = new_chromosome
 
-                pickle.dump(fitness_list, open(f"./trained_chromosomes/fitness_list.p", "wb"))
+            pickle.dump(fitness_list, open(f"./trained_chromosomes/fitness_list.p", "wb"))
 
     # udp.plot(chromosome, plot_modes=True, plot_mode_efficiency=True)
     # udp.pretty(chromosome)
 
 
 if __name__ == "__main__":
+
+    # manager = multiprocessing.Manager()
+    # return_dict = manager.dict()
+    # func(0, return_dict)
 
     manager = multiprocessing.Manager()
     return_dict = manager.dict()
