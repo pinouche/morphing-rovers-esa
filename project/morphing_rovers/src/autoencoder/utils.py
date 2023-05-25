@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 
 from morphing_rovers.morphing_udp import MysteriousMars, MAX_TIME
-from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 
 MAPS_PATH = "../../data/Maps/"
 COORDINATES_PATH = "../../data/coordinates.txt"
@@ -43,13 +42,6 @@ def create_mode_views_dataset(options, n_samples: int = 250, val_size: float = 0
     map_size = get_map_sizes()
     coordinates_data = load_coordinates()
     mars = MysteriousMars()
-
-    # initial run to get the dataset for clustering
-    # chromosome = pickle.load(open(PATH_CHROMOSOME, "rb"))
-    # network_trainer = OptimizeNetworkSupervised(options, chromosome)
-    # network_trainer.train(MAX_TIME, train=False)
-    # mode_view_dataset = network_trainer.udp.rover.cluster_data
-    # mode_view_dataset = np.stack([d[0] for d in mode_view_dataset])
 
     mode_view_dataset = []
     for map_id in range(len(map_size)):

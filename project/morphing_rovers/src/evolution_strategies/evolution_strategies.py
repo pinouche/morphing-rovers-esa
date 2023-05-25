@@ -12,6 +12,7 @@ from morphing_rovers.utils import Config
 
 N_PARAMETERS = 19126
 # N_PARAM_TO_PERTURB = 100
+N_PARAMETERS_MASKS = 11*11*4
 
 
 class EvolutionStrategies:
@@ -24,6 +25,7 @@ class EvolutionStrategies:
         self.udp = morphing_rover_UDP()
         self.best_fitness = np.inf
         self.best_chromosome = self.chromosome
+        self.score = None
 
         ##########
         # Initialise/restore
@@ -43,8 +45,10 @@ class EvolutionStrategies:
 
     def update(self) -> None:
 
+        self.score = -np.inf
         self.best_fitness = compute_fitness(self.chromosome, self.udp)[0]
-        self.udp.pretty(self.chromosome)
+        # self.udp.pretty(self.chromosome)
+        # self.udp.plot(self.chromosome)
         print(f"The current fitness is {self.best_fitness}")
 
         list_noise = []
@@ -52,8 +56,11 @@ class EvolutionStrategies:
 
         # random_indices = random.sample(range(len(self.chromosome)), N_PARAM_TO_PERTURB)
         for p in range(self.pop_size):
-            n_param_to_pertub = random.sample(range(1000), 1)
-            random_indices = random.sample(range(N_PARAMETERS), n_param_to_pertub[0])
+            n_param_to_pertub = random.sample(range(100), 1)[0]
+            if n_param_to_pertub == 0:
+                n_param_to_pertub = 1
+            random_indices = random.sample(range(N_PARAMETERS_MASKS), n_param_to_pertub)
+
             temporary_chromosome = copy.deepcopy(self.chromosome)
 
             if p % 10 == 0:
@@ -72,27 +79,28 @@ class EvolutionStrategies:
             list_fitness.append(f_obj)
             list_noise.append(noise)
 
-            if f_obj < self.best_fitness:
+            if f_obj < self.best_fitness and (self.best_fitness - f_obj)/n_param_to_pertub > self.score:
                 print(f"new best fitness is {f_obj}")
                 pickle.dump(temporary_chromosome, open(f"./trained_chromosomes/chromosome_fitness_fine_tuned{f_obj}.p", "wb"))
                 self.best_chromosome = temporary_chromosome
-                self.best_fitness = f_obj
+                # self.best_fitness = f_obj
+                self.score = (self.best_fitness - f_obj)/n_param_to_pertub
 
-            # self.chromosome = self.best_chromosome
+            self.chromosome = self.best_chromosome
 
-        list_weighted_noise = np.array([list_fitness[i]*list_noise[i] for i in range(len(list_fitness))])
+        # list_weighted_noise = np.array([list_fitness[i]*list_noise[i] for i in range(len(list_fitness))])
+        #
+        # # compute update step
+        # gradient_estimate = np.mean(np.array(list_weighted_noise), axis=0)
+        # update_step = gradient_estimate*(self.lr/self.sigma)
+        #
+        # print("GRADIENT SHAPE", gradient_estimate.shape, "UPDATE_STEP", update_step.shape)
+        #
+        # # update chromosome
+        # self.chromosome[random_indices] = (self.chromosome[random_indices] - update_step)
+        # fitness_update = compute_fitness(self.chromosome, self.udp)
 
-        # compute update step
-        gradient_estimate = np.mean(np.array(list_weighted_noise), axis=0)
-        update_step = gradient_estimate*(self.lr/self.sigma)
-
-        print("GRADIENT SHAPE", gradient_estimate.shape, "UPDATE_STEP", update_step.shape)
-
-        # update chromosome
-        self.chromosome[random_indices] = (self.chromosome[random_indices] - update_step)
-        fitness_update = compute_fitness(self.chromosome, self.udp)
-
-        print(f"The updated solution's fitness is {fitness_update}")
+        # print(f"The updated solution's fitness is {fitness_update}")
 
     def fit(self) -> None:
 

@@ -24,7 +24,7 @@ class Encoder(nn.Module):
             nn.Linear(32, fc2_input_dim),
             nn.ReLU(True),
             nn.Linear(fc2_input_dim, encoded_space_dim),
-            torch.nn.BatchNorm1d(encoded_space_dim)
+            # torch.nn.BatchNorm1d(encoded_space_dim)
         )
 
     def forward(self, x):

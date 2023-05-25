@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import os
 
+from sklearn.preprocessing import scale
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans, AgglomerativeClustering
@@ -15,7 +16,7 @@ DATA_PATH_TRAIN = "./autoencoder/training_dataset/train_mode_view_dataset.p"
 DATA_PATH_VAL = "./autoencoder/training_dataset/val_mode_view_dataset.p"
 PCA_MODEL = "./clustering/experiments/pca.p"
 
-K = 20
+K = 3
 
 
 class ClusteringTerrain:
@@ -54,7 +55,9 @@ class ClusteringTerrain:
             self.data = torch.Tensor(np.expand_dims(np.concatenate((train_data, val_data)), 1))
 
         else:
-            self.views = torch.unsqueeze(torch.stack([d[0] for d in self.data]), 1)
+            self.views = torch.stack([d[0] for d in self.data])
+            # self.views = self.views/self.views.norm(dim=(1, 2))
+            self.views = torch.unsqueeze(self.views, dim=1)
 
             if self.groupby_scenario:
                 self.scenarios_id = np.array([d[-1] for d in self.data])
@@ -71,6 +74,9 @@ class ClusteringTerrain:
         self.load_trained_autoencoder()
         self.get_latent_representation()
 
+        # pickle.dump(self.latent_representation, open("latent_representation.p", "wb"))
+        self.latent_representation /= np.expand_dims(np.linalg.norm(self.latent_representation, axis=1), axis=1)
+
         if os.path.exists(PCA_MODEL):
             pca_model = pickle.load(open(PCA_MODEL, "rb"))
         else:
@@ -82,6 +88,7 @@ class ClusteringTerrain:
                 pickle.dump(pca_model, open(PCA_MODEL, "wb"))
 
         self.latent_representation = pca_model.transform(self.latent_representation)[:, :K]
+        self.latent_representation *= pca_model.explained_variance_ratio_[:K]
 
         if self.config.clustering_algo == "kmeans":
             cluster_model = KMeans(n_clusters=self.config.n_clusters, random_state=self.random_state, init="k-means++",
@@ -95,7 +102,7 @@ class ClusteringTerrain:
             clusters = cluster_model.predict(self.latent_representation)
 
         elif self.config.clustering_algo == "agg":
-            cluster_model = AgglomerativeClustering(n_clusters=self.config.n_clusters, linkage='ward')
+            cluster_model = AgglomerativeClustering(n_clusters=self.config.n_clusters, linkage='average')
             clusters = cluster_model.fit_predict(self.latent_representation)
 
         else:
@@ -110,4 +117,3 @@ class ClusteringTerrain:
         print("CLUSTERS COUNTS", np.unique(clusters, return_counts=True))
 
         self.output = [self.views, self.data, clusters]
-        # pickle.dump((self.data, self.latent_representation, clusters), open("./experiments/clusters.p", "wb"))
