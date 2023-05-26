@@ -44,28 +44,6 @@ def adjust_clusters(cluster_data, masks_tensors):
     return cluster_data
 
 
-# def init_modes(options, chromosome):
-#
-#     # initial run to get the dataset for clustering
-#     network_trainer = OptimizeNetworkSupervised(options, chromosome)
-#     network_trainer.train(MAX_TIME, train=False)
-#     path_data = network_trainer.udp.rover.cluster_data
-#
-#     # clustering
-#     cluster_trainer = ClusteringTerrain(options, data=path_data, groupby_scenario=True, random_state=0)
-#     cluster_trainer.run()
-#     cluster_trainer_output = cluster_trainer.output
-#     c = [cluster_trainer_output[1], cluster_trainer_output[-1]]
-#
-#     # optimize modes
-#     mode_trainer = OptimizeMask(options, data=c)
-#     mode_trainer.train()
-#     average_speed = mode_trainer.weighted_average
-#     masks_tensors = mode_trainer.optimized_masks
-#
-#     return masks_tensors, cluster_trainer_output, average_speed
-
-
 def adjust_clusters_and_modes(options, cluster_trainer_output, masks_tensors, best_average_speed):
 
     # adjust clusters and optimize masks again

@@ -2,9 +2,7 @@ import pickle
 import torch
 import numpy as np
 
-from morphing_rovers.morphing_udp import morphing_rover_UDP, EPS_C, MAX_TIME
-from morphing_rovers.src.clustering.clustering_model.clustering import ClusteringTerrain
-from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
+from morphing_rovers.morphing_udp import EPS_C
 
 
 def load_data(path="../clustering/experiments/clusters.p"):

@@ -3,6 +3,7 @@ import torch
 import numpy as np
 
 from morphing_rovers.src.autoencoder.models.model import Autoencoder
+from morphing_rovers.src.mode_optimization.utils import velocity_function
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -34,4 +35,16 @@ def swap_most_and_least_occurring_clusters(clusters):
         new_arr.append(v)
 
     return new_arr
+
+
+def compute_velocity_matrix(data):
+    V = np.zeros((data.shape[0], data.shape[0]))
+    for i in range(data.shape[0]):
+        for j in range(i, data.shape[0]):
+            v = velocity_function(data[i], data[j])
+            V[i, j] = v
+
+    V = V + V.T - np.diag(np.diag(V))
+
+    return 1-V
 

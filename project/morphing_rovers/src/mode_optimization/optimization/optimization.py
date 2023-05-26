@@ -55,8 +55,8 @@ class OptimizeMask:
         else:
             self.config.n_clusters = len(self.solution_list)
 
-    def create_optimizer(self):
-        self.optimiser = Adam([self.solution], self.config.learning_rate_mask_optimization)
+    def create_optimizer(self, solution):
+        self.optimiser = Adam([solution], self.config.learning_rate_mask_optimization)
 
     def train_step(self, solution_expand, batch):
         velocity = velocity_function(solution_expand, batch).mean()
@@ -76,7 +76,7 @@ class OptimizeMask:
         for i, cluster_id in enumerate(np.unique(self.cluster_id)):
 
             self.solution = self.solution_list[i]
-            self.create_optimizer()
+            self.create_optimizer(self.solution)
 
             data_cluster = self.mode_view_data[self.cluster_id == cluster_id]
 
@@ -89,7 +89,8 @@ class OptimizeMask:
             weighted_average_velocity += self.velocity*data_cluster.shape[0]
             self.optimized_masks.append(self.solution)
 
-        self.optimized_masks = self.optimized_masks * int(4/self.config.n_clusters)
+        while len(self.optimized_masks) != 4:
+            self.optimized_masks.append(self.optimized_masks[0])
         self.weighted_average = weighted_average_velocity/len(self.data[0])
 
         # print("THE WEIGHTED AVERAGE SPEED IS", self.weighted_average)

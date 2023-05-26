@@ -10,12 +10,14 @@ from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans, AgglomerativeClustering
 
 from morphing_rovers.utils import Config
-from morphing_rovers.src.clustering.utils import load_checkpoint, swap_most_and_least_occurring_clusters
+from morphing_rovers.src.clustering.utils import load_checkpoint, swap_most_and_least_occurring_clusters, \
+    compute_velocity_matrix
 
 DATA_PATH_TRAIN = "./autoencoder/training_dataset/train_mode_view_dataset.p"
 DATA_PATH_VAL = "./autoencoder/training_dataset/val_mode_view_dataset.p"
 PCA_MODEL = "./clustering/experiments/pca.p"
 
+USE_VELOCITY = True
 K = 3
 
 
@@ -56,7 +58,6 @@ class ClusteringTerrain:
 
         else:
             self.views = torch.stack([d[0] for d in self.data])
-            # self.views = self.views/self.views.norm(dim=(1, 2))
             self.views = torch.unsqueeze(self.views, dim=1)
 
             if self.groupby_scenario:
@@ -67,28 +68,30 @@ class ClusteringTerrain:
                 self.data = self.views
 
         # get latent representation
-        self.latent_representation = self.model.encoder(self.data).numpy(force=True)
+        # pickle.dump(self.data, open("data_views.p", "wb"))
+        if not USE_VELOCITY:
+            self.latent_representation = self.model.encoder(self.data).numpy(force=True)
 
     def run(self):
 
         self.load_trained_autoencoder()
         self.get_latent_representation()
 
-        # pickle.dump(self.latent_representation, open("latent_representation.p", "wb"))
-        self.latent_representation /= np.expand_dims(np.linalg.norm(self.latent_representation, axis=1), axis=1)
-
-        if os.path.exists(PCA_MODEL):
-            pca_model = pickle.load(open(PCA_MODEL, "rb"))
+        if USE_VELOCITY:
+            self.latent_representation = compute_velocity_matrix(self.data)
         else:
-            if self.groupby_scenario:
-                raise ValueError("pca model does not exists")
+            if os.path.exists(PCA_MODEL):
+                pca_model = pickle.load(open(PCA_MODEL, "rb"))
             else:
-                pca_model = PCA(n_components=50)
-                pca_model.fit(self.latent_representation)
-                pickle.dump(pca_model, open(PCA_MODEL, "wb"))
+                if self.groupby_scenario:
+                    raise ValueError("pca model does not exists")
+                else:
+                    pca_model = PCA(n_components=50)
+                    pca_model.fit(self.latent_representation)
+                    pickle.dump(pca_model, open(PCA_MODEL, "wb"))
 
-        self.latent_representation = pca_model.transform(self.latent_representation)[:, :K]
-        self.latent_representation *= pca_model.explained_variance_ratio_[:K]
+            self.latent_representation = pca_model.transform(self.latent_representation)[:, :K]
+            self.latent_representation *= pca_model.explained_variance_ratio_[:K]
 
         if self.config.clustering_algo == "kmeans":
             cluster_model = KMeans(n_clusters=self.config.n_clusters, random_state=self.random_state, init="k-means++",
@@ -102,7 +105,10 @@ class ClusteringTerrain:
             clusters = cluster_model.predict(self.latent_representation)
 
         elif self.config.clustering_algo == "agg":
-            cluster_model = AgglomerativeClustering(n_clusters=self.config.n_clusters, linkage='average')
+            metric = None
+            if USE_VELOCITY:
+                metric = "precomputed"
+            cluster_model = AgglomerativeClustering(n_clusters=self.config.n_clusters, linkage='average', metric=metric)
             clusters = cluster_model.fit_predict(self.latent_representation)
 
         else:

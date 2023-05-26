@@ -6,7 +6,6 @@ import torch
 import os
 import multiprocessing
 import random
-from loguru import logger
 
 from morphing_rovers.src.clustering.clustering_model.clustering import ClusteringTerrain
 from morphing_rovers.src.mode_optimization.optimization.optimization import OptimizeMask
@@ -14,7 +13,7 @@ from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 from utils import adjust_clusters_and_modes, update_chromosome_with_mask, create_random_chromosome
 
-PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_fine_tuned2.0213.p"
+PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_does_not_exist.p"
 N_ITERATIONS_FULL_RUN = 20
 N_STEPS_TO_RUN = 100
 CLUSTERBY_SCENARIO = True
@@ -50,7 +49,7 @@ def func(i, return_dict=None):
             print(f"Optimizing network for the {n_iter} first rover's steps")
 
             network_trainer = OptimizeNetworkSupervised(options, chromosome)
-            network_trainer.train(n_iter, train=False)
+            network_trainer.train(n_iter, train=True)
             path_data = network_trainer.udp.rover.cluster_data
 
             chromosome = update_chromosome_with_mask(masks_tensors,
@@ -70,7 +69,6 @@ def func(i, return_dict=None):
                 return_dict[i].append((chromosome, fitness))
 
             # clustering
-            print("PATH DATA", len(path_data))
             cluster_trainer = ClusteringTerrain(options, data=path_data, groupby_scenario=CLUSTERBY_SCENARIO,
                                                 random_state=j)
             cluster_trainer.run()
@@ -81,31 +79,33 @@ def func(i, return_dict=None):
                 c = [cluster_trainer_output[1], cluster_trainer_output[-1]]
                 dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
                 clusters = np.array([dict_replace[k] for k in scenarios_id])
+                c = [cluster_trainer_output[0], clusters]
             else:
                 c = [cluster_trainer_output[0], cluster_trainer_output[-1]]
 
             # optimize modes
-            mode_trainer = OptimizeMask(options, data=[cluster_trainer_output[0], clusters])
+            # mode_trainer = OptimizeMask(options, data=c)
+            mode_trainer = OptimizeMask(options, data=c)
             mode_trainer.train()
             best_average_speed = mode_trainer.weighted_average
             masks_tensors = mode_trainer.optimized_masks
 
-            # if CLUSTERBY_SCENARIO:
-            #     # here, we want to adjust the scenarios' average
-            #     ################################################### remove this to use the average only
-            #     masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
-            #     dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
-            #     clusters = np.array([dict_replace[k] for k in scenarios_id])
-            #     c[-1] = clusters
-            #     c[0] = cluster_trainer_output[0]
-            #     #########################################
-            #
-            # else:
-            #     masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
+            if CLUSTERBY_SCENARIO:
+                # here, we want to adjust the scenarios' average
+                ################################################### remove this to use the average only
+                masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
+                dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
+                clusters = np.array([dict_replace[k] for k in scenarios_id])
+                c[-1] = clusters
+                c[0] = cluster_trainer_output[0]
+                #########################################
 
-            # mode_trainer = OptimizeMask(options, data=c)
-            # mode_trainer.train()
-            # masks_tensors = mode_trainer.optimized_masks
+            else:
+                masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
+
+            mode_trainer = OptimizeMask(options, data=c)
+            mode_trainer.train()
+            masks_tensors = mode_trainer.optimized_masks
 
             # updated chromosome
             new_chromosome = update_chromosome_with_mask(masks_tensors,
