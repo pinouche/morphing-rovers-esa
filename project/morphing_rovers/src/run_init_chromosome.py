@@ -13,14 +13,14 @@ from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 from utils import adjust_clusters_and_modes, update_chromosome_with_mask, create_random_chromosome
 
-PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_does_not_exist.p"
+PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness.p"
 N_ITERATIONS_FULL_RUN = 20
 N_STEPS_TO_RUN = 100
 CLUSTERBY_SCENARIO = True
 
 
 def func(i, return_dict=None):
-    torch.manual_seed(i + 200)  # add 10 every time to add randomness
+    torch.manual_seed(i + 300)  # add 10 every time to add randomness
 
     options = argparse.ArgumentParser(description='Model config')
     options.add_argument('--config', type=str, default='', help='Path of the config file')
@@ -63,8 +63,9 @@ def func(i, return_dict=None):
 
             if fitness < best_fitness:
                 print("NEW BEST FITNESS!!")
-                pickle.dump(chromosome,
-                            open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
+                if fitness < 2.05:
+                    pickle.dump(chromosome,
+                                open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
                 best_fitness = fitness
                 return_dict[i].append((chromosome, fitness))
 
@@ -77,35 +78,34 @@ def func(i, return_dict=None):
 
             if CLUSTERBY_SCENARIO:
                 c = [cluster_trainer_output[1], cluster_trainer_output[-1]]
-                dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
-                clusters = np.array([dict_replace[k] for k in scenarios_id])
-                c = [cluster_trainer_output[0], clusters]
+                # dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
+                # clusters = np.array([dict_replace[k] for k in scenarios_id])
+                # c = [cluster_trainer_output[0], clusters]
             else:
                 c = [cluster_trainer_output[0], cluster_trainer_output[-1]]
 
             # optimize modes
-            # mode_trainer = OptimizeMask(options, data=c)
             mode_trainer = OptimizeMask(options, data=c)
             mode_trainer.train()
             best_average_speed = mode_trainer.weighted_average
             masks_tensors = mode_trainer.optimized_masks
 
-            if CLUSTERBY_SCENARIO:
-                # here, we want to adjust the scenarios' average
-                ################################################### remove this to use the average only
-                masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
-                dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
-                clusters = np.array([dict_replace[k] for k in scenarios_id])
-                c[-1] = clusters
-                c[0] = cluster_trainer_output[0]
-                #########################################
-
-            else:
-                masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
-
-            mode_trainer = OptimizeMask(options, data=c)
-            mode_trainer.train()
-            masks_tensors = mode_trainer.optimized_masks
+            # if CLUSTERBY_SCENARIO:
+            #     # here, we want to adjust the scenarios' average
+            #     ################################################### remove this to use the average only
+            #     masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
+            #     dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
+            #     clusters = np.array([dict_replace[k] for k in scenarios_id])
+            #     c[-1] = clusters
+            #     c[0] = cluster_trainer_output[0]
+            #     #########################################
+            #
+            # else:
+            #     masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
+            #
+            # mode_trainer = OptimizeMask(options, data=c)
+            # mode_trainer.train()
+            # masks_tensors = mode_trainer.optimized_masks
 
             # updated chromosome
             new_chromosome = update_chromosome_with_mask(masks_tensors,
@@ -119,8 +119,9 @@ def func(i, return_dict=None):
 
             if fitness < best_fitness:
                 print("NEW BEST FITNESS!!")
-                pickle.dump(new_chromosome,
-                            open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
+                if fitness < 2.05:
+                    pickle.dump(new_chromosome,
+                                open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
                 best_fitness = fitness
                 return_dict[i].append((new_chromosome, fitness))
                 chromosome = new_chromosome

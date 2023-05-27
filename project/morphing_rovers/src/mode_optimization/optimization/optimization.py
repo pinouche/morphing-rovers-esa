@@ -73,12 +73,12 @@ class OptimizeMask:
         self.prepare_data()
         self.initialize_solution()
 
-        for i, cluster_id in enumerate(np.unique(self.cluster_id)):
+        for i in range(self.config.n_clusters):
 
             self.solution = self.solution_list[i]
             self.create_optimizer(self.solution)
 
-            data_cluster = self.mode_view_data[self.cluster_id == cluster_id]
+            data_cluster = self.mode_view_data[self.cluster_id == i]
 
             for iteration_step in range(self.config.n_iter_mask_optimization):
                 solution_expand = self.solution.repeat(data_cluster.shape[0], 1, 1)

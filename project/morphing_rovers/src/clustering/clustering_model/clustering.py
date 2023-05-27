@@ -108,18 +108,33 @@ class ClusteringTerrain:
             metric = None
             if USE_VELOCITY:
                 metric = "precomputed"
-            cluster_model = AgglomerativeClustering(n_clusters=self.config.n_clusters, linkage='average', metric=metric)
+            cluster_model = AgglomerativeClustering(n_clusters=self.config.n_clusters, linkage='complete', metric=metric)
             clusters = cluster_model.fit_predict(self.latent_representation)
+
+        elif self.config.clustering_algo == "manual":
+            clusters = np.zeros(30)
+            clusters[[0, 1, 5, 6, 11, 13, 15, 18, 19, 23, 24, 26, 28, 29]] = 0
+            clusters[[3, 9, 20]] = 1
+            clusters[12] = 2
+            clusters[10] = 3
+
+            # clusters[[4, 8, 22, 25]] = 2
+            # clusters[[16, 7, 14]] = 3
+            clusters[[2, 27, 21, 17, 16, 7, 14, 4, 8, 22, 25]] = 4  # others, not taken into account to optimize the modes
+
+            # [0, 1, 5, 6, 11, 13, 15, 18, 19, 23, 24, 26, 28, 29]
+            # [2, 27](bad)
+            # [21, 17](good)
+            # [3, 9, 20]
+            # [4, 8, 22, 25]
+            # [16, 7, 14]
+            # [12](lone cluster)
+            # [10](lone cluster)
 
         else:
             raise ValueError(f"clustering algo {self.config.clustering_algo} not supported.")
 
-        # if self.groupby_scenario:
-        #     scenarios = np.arange(0, 30, 1)
-        #     dict_replace = dict(zip(scenarios, clusters))
-        #     clusters = np.array([dict_replace[k] for k in self.scenarios_id])
-
-        clusters = swap_most_and_least_occurring_clusters(clusters)
+        # clusters = swap_most_and_least_occurring_clusters(clusters)
         print("CLUSTERS COUNTS", np.unique(clusters, return_counts=True))
 
         self.output = [self.views, self.data, clusters]

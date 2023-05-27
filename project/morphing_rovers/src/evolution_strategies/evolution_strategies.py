@@ -56,10 +56,10 @@ class EvolutionStrategies:
 
         # random_indices = random.sample(range(len(self.chromosome)), N_PARAM_TO_PERTURB)
         for p in range(self.pop_size):
-            n_param_to_pertub = random.sample(range(100), 1)[0]
+            n_param_to_pertub = random.sample(range(N_PARAMETERS), 1)[0]
             if n_param_to_pertub == 0:
                 n_param_to_pertub = 1
-            random_indices = random.sample(range(N_PARAMETERS_MASKS), n_param_to_pertub)
+            random_indices = random.sample(range(N_PARAMETERS), n_param_to_pertub)
 
             temporary_chromosome = copy.deepcopy(self.chromosome)
 
@@ -79,14 +79,15 @@ class EvolutionStrategies:
             list_fitness.append(f_obj)
             list_noise.append(noise)
 
-            if f_obj < self.best_fitness and (self.best_fitness - f_obj)/n_param_to_pertub > self.score:
+            if f_obj < self.best_fitness:
+            #  if f_obj < self.best_fitness and (self.best_fitness - f_obj) / n_param_to_pertub > self.score:
                 print(f"new best fitness is {f_obj}")
                 pickle.dump(temporary_chromosome, open(f"./trained_chromosomes/chromosome_fitness_fine_tuned{f_obj}.p", "wb"))
                 self.best_chromosome = temporary_chromosome
-                # self.best_fitness = f_obj
-                self.score = (self.best_fitness - f_obj)/n_param_to_pertub
+                self.best_fitness = f_obj
+                # self.score = (self.best_fitness - f_obj)/n_param_to_pertub
 
-            self.chromosome = self.best_chromosome
+                self.chromosome = self.best_chromosome
 
         # list_weighted_noise = np.array([list_fitness[i]*list_noise[i] for i in range(len(list_fitness))])
         #
