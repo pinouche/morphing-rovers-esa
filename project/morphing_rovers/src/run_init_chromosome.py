@@ -90,23 +90,6 @@ def func(i, return_dict=None):
             best_average_speed = mode_trainer.weighted_average
             masks_tensors = mode_trainer.optimized_masks
 
-            # if CLUSTERBY_SCENARIO:
-            #     # here, we want to adjust the scenarios' average
-            #     ################################################### remove this to use the average only
-            #     masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
-            #     dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
-            #     clusters = np.array([dict_replace[k] for k in scenarios_id])
-            #     c[-1] = clusters
-            #     c[0] = cluster_trainer_output[0]
-            #     #########################################
-            #
-            # else:
-            #     masks_tensors, c = adjust_clusters_and_modes(options, c, masks_tensors, best_average_speed)
-            #
-            # mode_trainer = OptimizeMask(options, data=c)
-            # mode_trainer.train()
-            # masks_tensors = mode_trainer.optimized_masks
-
             # updated chromosome
             new_chromosome = update_chromosome_with_mask(masks_tensors,
                                                          network_trainer.udp.rover.Control.chromosome,
