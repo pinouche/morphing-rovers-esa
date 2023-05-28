@@ -45,7 +45,7 @@ class OptimizeMask:
 
     def prepare_data(self):
         self.mode_view_data = torch.squeeze(self.data[0])
-        self.cluster_id = self.data[1]
+        self.cluster_id = np.array([int(val) for val in self.data[1]])
 
     def initialize_solution(self):
         if self.solution_list is None:
@@ -70,6 +70,7 @@ class OptimizeMask:
 
     def train(self):
         weighted_average_velocity = 0
+        total_number_of_views = 0
         self.prepare_data()
         self.initialize_solution()
 
@@ -87,11 +88,12 @@ class OptimizeMask:
                 # print("the current average velocity over the all cluster is: {:.3f}".format(self.velocity))
 
             weighted_average_velocity += self.velocity*data_cluster.shape[0]
+            total_number_of_views += data_cluster.shape[0]
             self.optimized_masks.append(self.solution)
 
         while len(self.optimized_masks) != 4:
             self.optimized_masks.append(self.optimized_masks[0])
-        self.weighted_average = weighted_average_velocity/len(self.data[0])
+        self.weighted_average = weighted_average_velocity/total_number_of_views
 
         # print("THE WEIGHTED AVERAGE SPEED IS", self.weighted_average)
         # pickle.dump(self.optimized_masks, open("./experiments/optimized_masks.p", "wb"))

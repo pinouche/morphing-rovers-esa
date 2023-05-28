@@ -68,7 +68,8 @@ class ClusteringTerrain:
                 self.data = self.views
 
         # get latent representation
-        # pickle.dump(self.data, open("data_views.p", "wb"))
+        pickle.dump(self.data, open("data_views.p", "wb"))
+
         if not USE_VELOCITY:
             self.latent_representation = self.model.encoder(self.data).numpy(force=True)
 
@@ -108,28 +109,20 @@ class ClusteringTerrain:
             metric = None
             if USE_VELOCITY:
                 metric = "precomputed"
-            cluster_model = AgglomerativeClustering(n_clusters=self.config.n_clusters, linkage='complete', metric=metric)
+            cluster_model = AgglomerativeClustering(n_clusters=self.config.n_clusters, linkage='average', metric=metric)
             clusters = cluster_model.fit_predict(self.latent_representation)
 
         elif self.config.clustering_algo == "manual":
-            clusters = np.zeros(30)
-            clusters[[0, 1, 5, 6, 11, 13, 15, 18, 19, 23, 24, 26, 28, 29]] = 0
-            clusters[[3, 9, 20]] = 1
-            clusters[12] = 2
-            clusters[10] = 3
+            clusters = np.ones(30)*4
+            clusters[[4, 6, 7, 8, 12, 21, 22, 23, 24, 25, 26, 27, 28, 29]] = 0
+            clusters[[0, 1, 2, 3]] = 1
+            clusters[[9, 15, 19]] = 2
+            clusters[[13, 14]] = 3
 
-            # clusters[[4, 8, 22, 25]] = 2
-            # clusters[[16, 7, 14]] = 3
-            clusters[[2, 27, 21, 17, 16, 7, 14, 4, 8, 22, 25]] = 4  # others, not taken into account to optimize the modes
-
-            # [0, 1, 5, 6, 11, 13, 15, 18, 19, 23, 24, 26, 28, 29]
-            # [2, 27](bad)
-            # [21, 17](good)
-            # [3, 9, 20]
-            # [4, 8, 22, 25]
-            # [16, 7, 14]
-            # [12](lone cluster)
-            # [10](lone cluster)
+            # [4, 6, 7, 8, 12, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+            # [0, 1, 2, 3]
+            # [9, 15, 19]
+            # [13, 14]
 
         else:
             raise ValueError(f"clustering algo {self.config.clustering_algo} not supported.")
