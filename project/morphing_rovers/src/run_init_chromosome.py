@@ -11,16 +11,16 @@ from morphing_rovers.src.clustering.clustering_model.clustering import Clusterin
 from morphing_rovers.src.mode_optimization.optimization.optimization import OptimizeMask
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
-from utils import adjust_clusters_and_modes, update_chromosome_with_mask, create_random_chromosome
+from utils import update_chromosome_with_mask, create_random_chromosome
 
 PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_does_not_exist.p"
 N_ITERATIONS_FULL_RUN = 20
-N_STEPS_TO_RUN = 500
+N_STEPS_TO_RUN = 100
 CLUSTERBY_SCENARIO = True
 
 
 def func(i, return_dict=None):
-    torch.manual_seed(i + 500)  # add 10 every time to add randomness
+    torch.manual_seed(i + 600)  # add 10 every time to add randomness
 
     options = argparse.ArgumentParser(description='Model config')
     options.add_argument('--config', type=str, default='', help='Path of the config file')
@@ -44,13 +44,16 @@ def func(i, return_dict=None):
             masks_tensors, chromosome = create_random_chromosome()
 
         fitness = udp.fitness(chromosome)[0]
+        # udp.pretty(chromosome)
+        # udp.plot(chromosome)
+
         print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
-        for n_iter in range(1, N_STEPS_TO_RUN + 1):
+        for n_iter in range(1, MAX_TIME + 1):
             print(f"Optimizing network for the {n_iter} first rover's steps")
 
             network_trainer = OptimizeNetworkSupervised(options, chromosome)
-            network_trainer.train(n_iter, train=True)
+            network_trainer.train(500, train=True)
             path_data = network_trainer.udp.rover.cluster_data
 
             chromosome = update_chromosome_with_mask(masks_tensors,
@@ -82,10 +85,9 @@ def func(i, return_dict=None):
 
             if CLUSTERBY_SCENARIO:
                 c = [cluster_trainer_output[1], cluster_trainer_output[-1]]
-                print()
-                # dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
-                # clusters = np.array([dict_replace[k] for k in scenarios_id])
-                # c = [cluster_trainer_output[0], clusters]
+                dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
+                clusters = np.array([dict_replace[k] for k in scenarios_id])
+                c = [cluster_trainer_output[0], clusters]
             else:
                 c = [cluster_trainer_output[0], cluster_trainer_output[-1]]
 
@@ -95,22 +97,23 @@ def func(i, return_dict=None):
             masks_tensors = mode_trainer.optimized_masks
 
             # updated chromosome
-            new_chromosome = update_chromosome_with_mask(masks_tensors,
-                                                         network_trainer.udp.rover.Control.chromosome,
-                                                         always_switch=True)
+            chromosome = update_chromosome_with_mask(masks_tensors,
+                                                     network_trainer.udp.rover.Control.chromosome,
+                                                     always_switch=True)
 
             # compute fitness
-            fitness = udp.fitness(new_chromosome)[0]
+            fitness = udp.fitness(chromosome)[0]
+            # udp.pretty(chromosome)
+            # udp.plot(chromosome)
             print("FITNESS AFTER MODE OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
             if fitness < best_fitness:
                 print("NEW BEST FITNESS!!")
                 if fitness < 2.05:
-                    pickle.dump(new_chromosome,
+                    pickle.dump(chromosome,
                                 open(f"./trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
                 best_fitness = fitness
-                return_dict[i].append((new_chromosome, fitness))
-                chromosome = new_chromosome
+                return_dict[i].append((chromosome, fitness))
 
                 clusters_list.append((cluster_trainer_output[-1], fitness))
                 pickle.dump(clusters_list, open(f"./trained_chromosomes/clusters_list.p", "wb"))

@@ -10,8 +10,7 @@ from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans, AgglomerativeClustering
 
 from morphing_rovers.utils import Config
-from morphing_rovers.src.clustering.utils import load_checkpoint, swap_most_and_least_occurring_clusters, \
-    compute_velocity_matrix
+from morphing_rovers.src.clustering.utils import load_checkpoint, swap_values, compute_velocity_matrix
 
 DATA_PATH_TRAIN = "./autoencoder/training_dataset/train_mode_view_dataset.p"
 DATA_PATH_VAL = "./autoencoder/training_dataset/val_mode_view_dataset.p"
@@ -109,25 +108,28 @@ class ClusteringTerrain:
             metric = None
             if USE_VELOCITY:
                 metric = "precomputed"
-            cluster_model = AgglomerativeClustering(n_clusters=self.config.n_clusters, linkage='average', metric=metric)
+            cluster_model = AgglomerativeClustering(n_clusters=None, linkage='complete', metric=metric,
+                                                    compute_full_tree=True, distance_threshold=0.5)
+            # compute_full_tree=True, distance_threshold=0.4,
             clusters = cluster_model.fit_predict(self.latent_representation)
+            print("CLUSTERS", clusters)
 
         elif self.config.clustering_algo == "manual":
             clusters = np.ones(30)*4
-            clusters[[4, 6, 7, 8, 12, 21, 22, 23, 24, 25, 26, 27, 28, 29]] = 0
-            clusters[[0, 1, 2, 3]] = 1
+            clusters[[0, 4, 6, 7, 8, 12, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29]] = 0
+            clusters[[1, 2, 3, 10, 11, 18, 20]] = 1
             clusters[[9, 15, 19]] = 2
-            clusters[[13, 14]] = 3
+            clusters[16] = 3
 
-            # [4, 6, 7, 8, 12, 21, 22, 23, 24, 25, 26, 27, 28, 29]
-            # [0, 1, 2, 3]
+            # [0, 4, 6, 7, 8, 12, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+            # [1, 2, 3, 10, 11, 18, 20]
             # [9, 15, 19]
-            # [13, 14]
+            # [16]
 
         else:
             raise ValueError(f"clustering algo {self.config.clustering_algo} not supported.")
 
-        # clusters = swap_most_and_least_occurring_clusters(clusters)
+        clusters = swap_values(clusters)
         print("CLUSTERS COUNTS", np.unique(clusters, return_counts=True))
 
         self.output = [self.views, self.data, clusters]

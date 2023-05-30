@@ -21,20 +21,21 @@ def load_checkpoint(session_name: str = "session_1", latent_dim: int = 50, fc_di
     return model
 
 
-def swap_most_and_least_occurring_clusters(clusters):
-    counts = np.unique(clusters, return_counts=True)
-    max_index = counts[0][np.argmax(counts[1])]  # most occurring
+def swap_values(integers):
+    unique_integers, counts = np.unique(integers, return_counts=True)
+    # Create a list of tuples with integers and their counts
+    integer_counts = list(zip(unique_integers, counts))
 
-    dict_swap = {max_index: 0, 0: max_index}
+    # Sort the list of tuples based on counts in descending order
+    sorted_counts = sorted(integer_counts, key=lambda x: x[1], reverse=True)
+    keys = dict(zip([tup[0] for tup in sorted_counts], np.arange(len(integers))))
 
-    new_arr = []
+    new_clusters = []
+    for val in integers:
+        new_integer = keys[val]
+        new_clusters.append(new_integer)
 
-    for v in clusters:
-        if v in dict_swap.keys():
-            v = dict_swap[v]
-        new_arr.append(v)
-
-    return new_arr
+    return new_clusters
 
 
 def compute_velocity_matrix(data):
