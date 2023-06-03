@@ -56,10 +56,10 @@ class OptimizeNetworkSupervised:
             controller_input = self.udp.rover.training_data[index][0]
             target = self.udp.rover.training_data[index][1][1]
 
-            if target < -np.pi/4:
-                target = -np.pi/4
-            elif target > np.pi/4:
-                target = np.pi/4
+            if target < -np.pi / 4:
+                target = -np.pi / 4
+            elif target > np.pi / 4:
+                target = np.pi / 4
             else:
                 target = target
 
@@ -84,9 +84,10 @@ class OptimizeNetworkSupervised:
     def train_step(self):
         # self.activate_gradient()
 
-        _, angular_change, _ = self.udp.rover.Control(torch.unsqueeze(torch.from_numpy(np.stack(self.rover_view)), dim=1),
-                                                      torch.from_numpy(np.stack(self.rover_state)),
-                                                      torch.from_numpy(np.stack(self.latent_state)))
+        _, angular_change, _ = self.udp.rover.Control(
+            torch.unsqueeze(torch.from_numpy(np.stack(self.rover_view)), dim=1),
+            torch.from_numpy(np.stack(self.rover_state)),
+            torch.from_numpy(np.stack(self.latent_state)))
 
         loss = self.loss_function(angular_change, self.data_y).mean()
 
@@ -105,6 +106,6 @@ class OptimizeNetworkSupervised:
             for iteration_step in range(self.config.n_iter_supervised_learning):
                 loss = self.train_step()
 
-                if (iteration_step+1) % 10 == 0:
-                   print(f"Computing for iteration number {iteration_step+1}")
-                   print(f"The average loss is: {loss}")
+                if (iteration_step + 1) % 10 == 0:
+                    print(f"Computing for iteration number {iteration_step + 1}")
+                    print(f"The average loss is: {loss}")

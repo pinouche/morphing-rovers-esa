@@ -6,7 +6,7 @@ import multiprocessing
 from morphing_rovers.morphing_udp import morphing_rover_UDP
 from morphing_rovers.src.evolution_strategies.evolution_strategies import EvolutionStrategies
 
-PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_fine_tuned2.0255.p"
+PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_fine_tuned2.0323.p"
 
 
 if __name__ == "__main__":

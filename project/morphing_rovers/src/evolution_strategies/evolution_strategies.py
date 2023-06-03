@@ -56,10 +56,10 @@ class EvolutionStrategies:
 
         # random_indices = random.sample(range(len(self.chromosome)), N_PARAM_TO_PERTURB)
         for p in range(self.pop_size):
-            n_param_to_pertub = random.sample(range(N_PARAMETERS), 1)[0]
+            n_param_to_pertub = random.sample(range(N_PARAMETERS_MASKS), 1)[0]
             if n_param_to_pertub == 0:
                 n_param_to_pertub = 1
-            random_indices = random.sample(range(N_PARAMETERS), n_param_to_pertub)
+            random_indices = random.sample(range(N_PARAMETERS_MASKS), n_param_to_pertub)
 
             temporary_chromosome = copy.deepcopy(self.chromosome)
 

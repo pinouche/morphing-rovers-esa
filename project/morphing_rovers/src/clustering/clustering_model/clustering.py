@@ -4,7 +4,9 @@ import numpy as np
 import torch
 import os
 
-from sklearn.preprocessing import scale
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans, AgglomerativeClustering
@@ -22,7 +24,7 @@ K = 3
 
 class ClusteringTerrain:
 
-    def __init__(self, options, data=None, groupby_scenario=False, random_state=None):
+    def __init__(self, options, path_data=None, groupby_scenario=False, algorithm=None, random_state=None):
         self.options = options
         self.model = None
 
@@ -30,7 +32,7 @@ class ClusteringTerrain:
         self.scenarios_id = None
         self.groupby_scenario = groupby_scenario
         self.random_state = random_state
-        self.data = data
+        self.data = path_data
         self.latent_representation = None
         self.output = None
 
@@ -43,6 +45,9 @@ class ClusteringTerrain:
         with open(config_path) as f:
             self.config = yaml.safe_load(f)
         self.config = Config(self.config)
+
+        if self.config.clustering_algo == "None":
+            self.config.clustering_algo = algorithm
 
     def load_trained_autoencoder(self):
         self.model = load_checkpoint(self.config.session_name, self.config.encoded_space_dim, self.config.fc2_input_dim)
@@ -66,20 +71,12 @@ class ClusteringTerrain:
             else:
                 self.data = self.views
 
-        # get latent representation
-        pickle.dump(self.data, open("data_views.p", "wb"))
+        # # get latent representation
+        # pickle.dump(self.data, open("data_views.p", "wb"))
 
         if not USE_VELOCITY:
             self.latent_representation = self.model.encoder(self.data).numpy(force=True)
 
-    def run(self):
-
-        self.load_trained_autoencoder()
-        self.get_latent_representation()
-
-        if USE_VELOCITY:
-            self.latent_representation = compute_velocity_matrix(self.data)
-        else:
             if os.path.exists(PCA_MODEL):
                 pca_model = pickle.load(open(PCA_MODEL, "rb"))
             else:
@@ -92,6 +89,13 @@ class ClusteringTerrain:
 
             self.latent_representation = pca_model.transform(self.latent_representation)[:, :K]
             self.latent_representation *= pca_model.explained_variance_ratio_[:K]
+        else:
+            self.latent_representation = compute_velocity_matrix(self.data)
+
+    def run(self):
+
+        self.load_trained_autoencoder()
+        self.get_latent_representation()
 
         if self.config.clustering_algo == "kmeans":
             cluster_model = KMeans(n_clusters=self.config.n_clusters, random_state=self.random_state, init="k-means++",
@@ -108,17 +112,15 @@ class ClusteringTerrain:
             metric = None
             if USE_VELOCITY:
                 metric = "precomputed"
-            cluster_model = AgglomerativeClustering(n_clusters=None, linkage='complete', metric=metric,
-                                                    compute_full_tree=True, distance_threshold=0.5)
-            # compute_full_tree=True, distance_threshold=0.4,
+            cluster_model = AgglomerativeClustering(n_clusters=self.config.n_clusters, linkage='complete', metric=metric)
+            # compute_full_tree=True, distance_threshold=0.1
+
             clusters = cluster_model.fit_predict(self.latent_representation)
-            print("CLUSTERS", clusters)
 
         elif self.config.clustering_algo == "manual":
-            clusters = np.ones(30)*4
-            clusters[[0, 4, 6, 7, 8, 12, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29]] = 0
-            clusters[[1, 2, 3, 10, 11, 18, 20]] = 1
-            clusters[[9, 15, 19]] = 2
+            clusters = np.ones(30)*0
+            clusters[13] = 1
+            clusters[14] = 2
             clusters[16] = 3
 
             # [0, 4, 6, 7, 8, 12, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29]

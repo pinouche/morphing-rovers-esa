@@ -60,3 +60,19 @@ def fitness_wrapper(x):
     print(f"the fitness is {fitness}")
 
     return fitness
+
+
+def compute_average_distance_within_clusters(V, clusters):
+
+    d_sum = 0
+    for c in range(4):
+        d = 0
+        cluster_size = np.sum(clusters == c)
+        indices = np.where(clusters == c)[0]
+
+        for i in range(cluster_size):
+            for j in range(i + 1, cluster_size):
+                d += V[indices[i], indices[j]]
+        d_sum += d / cluster_size
+
+    return d_sum
