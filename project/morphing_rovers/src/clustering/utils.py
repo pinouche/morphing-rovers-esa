@@ -1,6 +1,9 @@
 import os
 import torch
+import random
 import numpy as np
+
+from sklearn.decomposition import PCA
 
 from morphing_rovers.src.autoencoder.models.model import Autoencoder
 from morphing_rovers.src.mode_optimization.utils import velocity_function
@@ -48,4 +51,21 @@ def compute_velocity_matrix(data):
     V = V + V.T - np.diag(np.diag(V))
 
     return 1-V
+
+
+def compute_full_velocity_matrix(data, n_landmarks=300):
+
+    n_landmarks = min(data.shape[0], n_landmarks)
+    indices = random.sample(range(data.shape[0]), n_landmarks)
+    V = np.zeros((data.shape[0], n_landmarks))
+
+    for i in range(data.shape[0]):
+        for j in indices:
+            v = velocity_function(data[i], data[j])
+            V[i, j] = v
+
+    # pca_model = PCA(n_components=20)
+    # V = pca_model.fit_transform(V)
+
+    return V
 

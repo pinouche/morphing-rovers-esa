@@ -7,17 +7,16 @@ import os
 import multiprocessing
 import random
 
-from morphing_rovers.src.clustering.utils import compute_velocity_matrix
 from morphing_rovers.src.clustering.clustering_model.clustering import ClusteringTerrain
 from morphing_rovers.src.mode_optimization.optimization.optimization import OptimizeMask
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
-from utils import update_chromosome_with_mask, create_random_chromosome, compute_average_distance_within_clusters
+from utils import update_chromosome_with_mask, create_random_chromosome
 
 PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_does_not_exist.p"
-N_ITERATIONS_FULL_RUN = 20
+N_ITERATIONS_FULL_RUN = 200
 N_STEPS_TO_RUN = 100
-CLUSTERBY_SCENARIO = True
+CLUSTERBY_SCENARIO = False
 
 
 def func(i):
@@ -40,11 +39,10 @@ def func(i):
     fitness = udp.fitness(chromosome)[0]
     print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
-    list_views, list_clusters = [], []
     best_fitness = np.inf
     for j in range(N_ITERATIONS_FULL_RUN):
         print(f"COMPUTING FOR RUN NUMBER {j}")
-        for n_iter in range(MAX_TIME, MAX_TIME + 1):
+        for n_iter in range(1, 50 + 1):
             print(f"Optimizing network for the {n_iter} first rover's steps")
 
             network_trainer = OptimizeNetworkSupervised(options, chromosome)
@@ -56,6 +54,9 @@ def func(i):
                                                      always_switch=True)
 
             fitness = udp.fitness(chromosome)[0]
+            # udp.pretty(chromosome)
+            # udp.plot(chromosome)
+
             print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
                   "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
 
@@ -77,10 +78,7 @@ def func(i):
                 c = [cluster_trainer_output[1], cluster_trainer_output[-1]]
                 dict_replace = dict(zip(np.unique(scenarios_id), c[-1]))
                 clusters = np.array([dict_replace[k] for k in scenarios_id])
-                list_clusters.append(clusters)
-                list_views.append(cluster_trainer_output[0])
-                print("SIZE DATA CLUSTERS AND VIEWS", torch.concatenate(list_views).shape, np.concatenate(list_clusters).shape)
-                c = [torch.concatenate(list_views), np.concatenate(list_clusters)]
+                c = [cluster_trainer_output[0], clusters]
             else:
                 c = [cluster_trainer_output[0], cluster_trainer_output[-1]]
 

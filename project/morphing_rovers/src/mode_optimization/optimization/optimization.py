@@ -2,7 +2,7 @@ import yaml
 import pickle
 import numpy as np
 import torch
-from torch.optim import Adam
+from torch.optim import Adam, LBFGS
 
 from morphing_rovers.src.mode_optimization.utils import load_data, velocity_function
 from morphing_rovers.utils import Config
@@ -59,14 +59,22 @@ class OptimizeMask:
         self.optimiser = Adam([solution], self.config.learning_rate_mask_optimization)
 
     def train_step(self, solution_expand, batch):
-        velocity = velocity_function(solution_expand, batch).mean()
-        velocity *= -1
+        def closure():
+            self.optimiser.zero_grad()
+            v = velocity_function(solution_expand, batch).mean()
+            v *= -1
+            v.backward()
 
-        self.optimiser.zero_grad()
-        velocity.backward()
-        self.optimiser.step()
+            return v
 
-        return velocity.item()
+        # velocity = velocity_function(solution_expand, batch).mean()
+        # velocity *= -1
+        # self.optimiser.zero_grad()
+        # velocity.backward()
+
+        v = self.optimiser.step(closure=closure)
+
+        return v.item()
 
     def train(self):
         weighted_average_velocity = 0

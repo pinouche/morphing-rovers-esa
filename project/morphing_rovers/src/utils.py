@@ -10,7 +10,9 @@ def create_random_chromosome():
     chromosome = morphing_rover_UDP().example()
     rover = Rover(chromosome)
     control = rover.Control
+
     masks_tensors = [torch.rand(11, 11, requires_grad=True) for _ in range(4)]
+
     chromosome = update_chromosome_with_mask(masks_tensors, control.chromosome, always_switch=True)
 
     return masks_tensors, chromosome
@@ -61,18 +63,3 @@ def fitness_wrapper(x):
 
     return fitness
 
-
-def compute_average_distance_within_clusters(V, clusters):
-
-    d_sum = 0
-    for c in range(4):
-        d = 0
-        cluster_size = np.sum(clusters == c)
-        indices = np.where(clusters == c)[0]
-
-        for i in range(cluster_size):
-            for j in range(i + 1, cluster_size):
-                d += V[indices[i], indices[j]]
-        d_sum += d / cluster_size
-
-    return d_sum

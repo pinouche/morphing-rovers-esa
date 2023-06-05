@@ -3,10 +3,11 @@ import argparse
 import os
 import multiprocessing
 
+from utils import create_random_chromosome
 from morphing_rovers.morphing_udp import morphing_rover_UDP
 from morphing_rovers.src.evolution_strategies.evolution_strategies import EvolutionStrategies
 
-PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_fine_tuned2.0323.p"
+PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_does_not_exist.p"
 
 
 if __name__ == "__main__":
@@ -20,7 +21,7 @@ if __name__ == "__main__":
     if os.path.exists(PATH_CHROMOSOME):
         chromosome = pickle.load(open(PATH_CHROMOSOME, "rb"))
     else:
-        raise FileNotFoundError
+        _, chromosome = create_random_chromosome()
 
     es_trainer = EvolutionStrategies(options, chromosome)
     es_trainer.fit()

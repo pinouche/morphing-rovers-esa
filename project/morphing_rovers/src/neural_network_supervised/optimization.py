@@ -106,6 +106,6 @@ class OptimizeNetworkSupervised:
             for iteration_step in range(self.config.n_iter_supervised_learning):
                 loss = self.train_step()
 
-                if (iteration_step + 1) % 10 == 0:
-                    print(f"Computing for iteration number {iteration_step + 1}")
-                    print(f"The average loss is: {loss}")
+                # if (iteration_step + 1) % 10 == 0:
+                #     print(f"Computing for iteration number {iteration_step + 1}")
+                #     print(f"The average loss is: {loss}")
