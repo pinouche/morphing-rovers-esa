@@ -60,12 +60,12 @@ def compute_full_velocity_matrix(data, n_landmarks=300):
     V = np.zeros((data.shape[0], n_landmarks))
 
     for i in range(data.shape[0]):
-        for j in indices:
+        for index, j in enumerate(indices):
             v = velocity_function(data[i], data[j])
-            V[i, j] = v
+            V[i, index] = v
 
-    # pca_model = PCA(n_components=20)
-    # V = pca_model.fit_transform(V)
+    pca_model = PCA(n_components=20)
+    V = pca_model.fit_transform(V)
 
     return V
 

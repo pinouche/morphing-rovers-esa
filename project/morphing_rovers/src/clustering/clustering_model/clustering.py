@@ -85,8 +85,9 @@ class ClusteringTerrain:
             self.latent_representation = pca_model.transform(self.latent_representation)[:, :K]
             self.latent_representation *= pca_model.explained_variance_ratio_[:K]
         else:
+
             if self.data.shape[0] > 30:
-                self.latent_representation = compute_full_velocity_matrix(self.data, 100)
+                self.latent_representation = compute_full_velocity_matrix(self.data, 300)
             else:
                 self.latent_representation = compute_velocity_matrix(self.data)
 
