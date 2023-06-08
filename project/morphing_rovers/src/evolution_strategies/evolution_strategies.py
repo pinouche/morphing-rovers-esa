@@ -17,7 +17,8 @@ N_PARAMETERS_MASKS = 11*11*4
 
 class EvolutionStrategies:
 
-    def __init__(self, options, chromosome):
+    def __init__(self, seed, options, chromosome):
+        random.seed(seed)
 
         self.options = options
         self.chromosome = chromosome
@@ -55,11 +56,12 @@ class EvolutionStrategies:
         list_fitness = []
 
         # random_indices = random.sample(range(len(self.chromosome)), N_PARAM_TO_PERTURB)
-        for p in range(self.pop_size):
-            n_param_to_pertub = random.sample(range(N_PARAMETERS), 1)[0]
-            if n_param_to_pertub == 0:
-                n_param_to_pertub = 1
-            random_indices = random.sample(range(N_PARAMETERS), n_param_to_pertub)
+        for p in range(N_PARAMETERS_MASKS):
+            # n_param_to_pertub = random.sample(range(1), 1)[0]
+            # if n_param_to_pertub == 0:
+            #     n_param_to_pertub = 1
+            # random_indices = random.sample(range(N_PARAMETERS_MASKS), n_param_to_pertub)
+            random_indices = [p]
 
             temporary_chromosome = copy.deepcopy(self.chromosome)
 
@@ -74,8 +76,8 @@ class EvolutionStrategies:
             temporary_chromosome[random_indices] = chromosome_to_perturb
 
             # compute the fitness
-            f_obj = round(compute_fitness(temporary_chromosome, self.udp)[0], 4)
-            print(f_obj)
+            f_obj = compute_fitness(temporary_chromosome, self.udp)[0]
+            print(round(f_obj, 4))
             list_fitness.append(f_obj)
             list_noise.append(noise)
 

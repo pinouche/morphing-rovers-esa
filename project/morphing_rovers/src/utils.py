@@ -25,8 +25,9 @@ def get_best_mode(mode_view, masks_list):
         velocity = velocity_function(torch.unsqueeze(m, dim=0), mode_view).numpy(force=True)
         velocities.append(velocity)
     best_mode = np.argmax(velocities)
+    best_velocity = np.max(velocities)
 
-    return best_mode
+    return best_mode, best_velocity
 
 
 def adjust_clusters(cluster_data, masks_tensors):
@@ -62,4 +63,19 @@ def fitness_wrapper(x):
     print(f"the fitness is {fitness}")
 
     return fitness
+
+
+def compute_average_best_velocity(means_views, masks_list):
+
+    velocity = 0
+
+    for m in means_views:
+        best_mode, best_velocity = get_best_mode(m, masks_list)
+        velocity += best_velocity
+
+    return velocity/len(means_views)
+
+
+
+
 

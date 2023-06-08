@@ -8,7 +8,7 @@ encoded_space_dim: 50
 fc2_input_dim: 256
 
 # clustering_algorithm
-clustering_algo: "kmeans"
+clustering_algo: "agg"
 n_clusters: 4
 
 # for mask optimization
@@ -20,10 +20,10 @@ n_iter_supervised_learning: 150 # 100 normally
 learning_rate_supervised_learning: 0.002 # 0.002 normally
 
 # for the evolution strategies
-es_sigma: 0.001
+es_sigma: 0.01
 es_lr: 0.0001
-es_pop_size: 1000
-es_epochs: 100
+es_pop_size: 100
+es_epochs: 1
 n_params_to_perturb: 19126
 
 # session name

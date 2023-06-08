@@ -64,7 +64,7 @@ def compute_full_velocity_matrix(data, n_landmarks=300):
             v = velocity_function(data[i], data[j])
             V[i, index] = v
 
-    pca_model = PCA(n_components=20)
+    pca_model = PCA(n_components=5)
     V = pca_model.fit_transform(V)
 
     return V

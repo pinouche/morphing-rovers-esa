@@ -1,13 +1,21 @@
 import pickle
 import argparse
 import os
-import multiprocessing
+import numpy as np
+from concurrent.futures import ThreadPoolExecutor
 
 from utils import create_random_chromosome
 from morphing_rovers.morphing_udp import morphing_rover_UDP
 from morphing_rovers.src.evolution_strategies.evolution_strategies import EvolutionStrategies
 
-PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_does_not_exist.p"
+PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_fine_tuned2.0152716636657715.p"
+NUM_ITERATIONS = 100
+
+
+def wrapper_function(seed, opt, chrom):
+    es_trainer = EvolutionStrategies(seed, opt, chrom)
+    es_trainer.fit()
+    return es_trainer.best_chromosome
 
 
 if __name__ == "__main__":
@@ -23,8 +31,13 @@ if __name__ == "__main__":
     else:
         _, chromosome = create_random_chromosome()
 
-    es_trainer = EvolutionStrategies(options, chromosome)
-    es_trainer.fit()
+    seeds = list(range(4))
+    with ThreadPoolExecutor() as executor:
+        for _ in range(NUM_ITERATIONS):
+            results = list(executor.map(wrapper_function, seeds, [options] * len(seeds), [chromosome] * len(seeds)))
+            arg_min = np.argmin([udp.fitness(x) for x in results])
+            chromosome = np.array(results)[arg_min]
+
 
 
 

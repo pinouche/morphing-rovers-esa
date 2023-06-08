@@ -115,8 +115,8 @@ class ClusteringTerrain:
             if USE_VELOCITY:
                 metric = "precomputed"
 
-            cluster_model = AgglomerativeClustering(n_clusters=None, linkage='single', metric=metric,
-                                                    distance_threshold=0.9,
+            cluster_model = AgglomerativeClustering(n_clusters=None, linkage='average', metric=metric,
+                                                    distance_threshold=0.5,
                                                     compute_full_tree=True)
 
             clusters = cluster_model.fit_predict(self.latent_representation)
@@ -132,6 +132,5 @@ class ClusteringTerrain:
             raise ValueError(f"clustering algo {self.config.clustering_algo} not supported.")
 
         clusters = swap_values(clusters)
-        print("CLUSTERS COUNTS", np.unique(clusters, return_counts=True))
 
         self.output = [self.views, self.data, clusters]

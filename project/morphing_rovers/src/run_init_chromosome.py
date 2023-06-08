@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import torch
 import os
+from concurrent.futures import ThreadPoolExecutor
 import multiprocessing
 import random
 
@@ -11,16 +12,16 @@ from morphing_rovers.src.clustering.clustering_model.clustering import Clusterin
 from morphing_rovers.src.mode_optimization.optimization.optimization import OptimizeMask
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
 from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
-from utils import update_chromosome_with_mask, create_random_chromosome
+from utils import update_chromosome_with_mask, create_random_chromosome, compute_average_best_velocity
 
 PATH_CHROMOSOME = "./trained_chromosomes/chromosome_fitness_does_not_exist.p"
 N_ITERATIONS_FULL_RUN = 200
 N_STEPS_TO_RUN = 100
-CLUSTERBY_SCENARIO = False
+CLUSTERBY_SCENARIO = True
 
 
 def func(i):
-    torch.manual_seed(i + 600)  # add 10 every time to add randomness
+    torch.manual_seed(i + 700)  # add 10 every time to add randomness
 
     options = argparse.ArgumentParser(description='Model config')
     options.add_argument('--config', type=str, default='', help='Path of the config file')
@@ -42,7 +43,7 @@ def func(i):
     best_fitness = np.inf
     for j in range(N_ITERATIONS_FULL_RUN):
         print(f"COMPUTING FOR RUN NUMBER {j}")
-        for n_iter in range(1, 50 + 1):
+        for n_iter in range(MAX_TIME, MAX_TIME + 1):
             print(f"Optimizing network for the {n_iter} first rover's steps")
 
             network_trainer = OptimizeNetworkSupervised(options, chromosome)
@@ -87,6 +88,8 @@ def func(i):
             mode_trainer.train()
             masks_tensors = mode_trainer.optimized_masks
 
+            velocity = compute_average_best_velocity(cluster_trainer_output[1], masks_tensors)
+
             # updated chromosome
             chromosome = update_chromosome_with_mask(masks_tensors,
                                                      network_trainer.udp.rover.Control.chromosome,
@@ -94,7 +97,8 @@ def func(i):
 
             # compute fitness
             fitness = udp.fitness(chromosome)[0]
-            print("FITNESS AFTER MODE OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed))
+            print("FITNESS AFTER MODE OPTIMIZATION", fitness, "overall speed", np.mean(udp.rover.overall_speed),
+                  "mode velocity", velocity, "CLUSTERS COUNTS", np.unique(cluster_trainer_output[-1], return_counts=True))
 
             if fitness < best_fitness:
                 print("NEW BEST FITNESS!!")
@@ -106,15 +110,8 @@ def func(i):
 
 if __name__ == "__main__":
 
-    func(0)
-
-    # manager = multiprocessing.Manager()
-    # num_processes = multiprocessing.cpu_count()  # Get the number of available CPU cores
+    # func(0)
     #
-    # p = [multiprocessing.Process(target=func, args=(i, ))
-    #      for i in range(2)]
-    #
-    # for proc in p:
-    #     proc.start()
-    # for proc in p:
-    #     proc.join()
+    seeds = [0, 1, 2, 3]
+    with ThreadPoolExecutor() as executor:
+        batch_list = executor.map(func, seeds)
