@@ -1,5 +1,7 @@
 # ESA morphing rovers optimisation challenge
 
+This code is a solution to the Optimisation challenge SPOC2 of the European Space Agency (https://optimise.esa.int/challenge/spoc-2-morphing-rovers/About)
+
 ## Set-up
 
 * Use Poetry to manage the dependencies 
