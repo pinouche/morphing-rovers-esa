@@ -1,6 +1,5 @@
 import pickle
 import torch
-import numpy as np
 
 from morphing_rovers.morphing_udp import EPS_C
 

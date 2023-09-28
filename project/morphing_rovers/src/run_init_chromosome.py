@@ -21,7 +21,7 @@ CLUSTERBY_SCENARIO = True
 
 
 def func(i):
-    torch.manual_seed(i + 700)  # add 10 every time to add randomness
+    torch.manual_seed(i)  # add 10 every time to add randomness
 
     options = argparse.ArgumentParser(description='Model config')
     options.add_argument('--config', type=str, default='', help='Path of the config file')
@@ -43,7 +43,7 @@ def func(i):
     best_fitness = np.inf
     for j in range(N_ITERATIONS_FULL_RUN):
         print(f"COMPUTING FOR RUN NUMBER {j}")
-        for n_iter in range(MAX_TIME, MAX_TIME + 1):
+        for n_iter in range(1, MAX_TIME + 1):
             print(f"Optimizing network for the {n_iter} first rover's steps")
 
             network_trainer = OptimizeNetworkSupervised(options, chromosome)
@@ -55,8 +55,8 @@ def func(i):
                                                      always_switch=True)
 
             fitness = udp.fitness(chromosome)[0]
-            # udp.pretty(chromosome)
-            # udp.plot(chromosome)
+            udp.pretty(chromosome)
+            udp.plot(chromosome)
 
             print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
                   "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
@@ -110,8 +110,8 @@ def func(i):
 
 if __name__ == "__main__":
 
-    # func(0)
-    #
-    seeds = [0, 1, 2, 3]
-    with ThreadPoolExecutor() as executor:
-        batch_list = executor.map(func, seeds)
+    func(0)
+
+    # seeds = [0, 1, 2, 3]
+    # with ThreadPoolExecutor() as executor:
+    #     batch_list = executor.map(func, seeds)

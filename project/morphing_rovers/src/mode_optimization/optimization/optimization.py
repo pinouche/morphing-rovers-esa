@@ -1,8 +1,7 @@
 import yaml
-import pickle
 import numpy as np
 import torch
-from torch.optim import Adam, LBFGS
+from torch.optim import Adam
 
 from morphing_rovers.src.mode_optimization.utils import load_data, velocity_function
 from morphing_rovers.utils import Config
