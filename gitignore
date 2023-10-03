@@ -180,5 +180,5 @@ node_modules
 # Files
 src/clm/gptj/clm_gptj.py
 
-**/.pyc
+**/**.pyc
 **/.p
