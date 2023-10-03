@@ -184,3 +184,7 @@ src/clm/gptj/clm_gptj.py
 **/.p
 
 **/.cpython-310.pyc
+
+../__pycache__/__init__.cpython-310.pyc
+../__pycache__/morphing_udp.cpython-310.pyc
+../__pycache__/utils.cpython-310.pyc
