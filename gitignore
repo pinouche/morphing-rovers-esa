@@ -182,3 +182,5 @@ src/clm/gptj/clm_gptj.py
 
 **/**.pyc
 **/.p
+
+**/.cpython-310.pyc
