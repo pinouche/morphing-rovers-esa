@@ -21,7 +21,7 @@ from morphing_rovers.src.imitation_learning.arc_trajectories import compute_both
 # CONSTANTS DEFINING THE PROBLEM
 #################################################################################################################
 
-PATH = os.path.join("..", "data")
+PATH = os.path.join("..", "..", "data")
 
 # Parameters for the rover modes
 MASK_SIZE = 11
@@ -576,7 +576,6 @@ class Rover:
 
         switching_mode, angular_change, self.latent_state = self.Control(rover_view, rover_state, self.latent_state)
 
-        # if scenario_number in [8, 9, 11, 14, 16, 21, 23, 25]:
         self.cluster_data.append((mode_view, self.current_mode, scenario_number))
 
         # Save angular velocity change obtained from neural network
@@ -714,28 +713,32 @@ class morphing_rover_UDP:
         """
         return 7
 
-    def fitness(self, rover, completed_scenarios, num_steps_to_run):
+    def fitness(self, rover, completed_scenarios, scenario_number, num_steps_to_run):
         """
         Fitness function for the UDP
 
         Args:
-            chromosome: the chromosome/decision vector to be tested
-            detailed_results: whether to record all the results from a scenario
-            pretty: if the pretty function is called, this returns scores for each map
+            num_steps_to_run: num_steps to run for each scenario
+            scenario_number: which scenario to compute for
+            completed_scenarios: num_completed_scenarios
+            rover: rover instance
         Returns:
             score: the score/fitness for this chromosome. Best value is 1.
         """
         # Create rover from chromosome
         self.rover = rover
 
+        scenario_n = 0
         # Simulates N scenarios, records the results
         for heightmap in range(MAPS_PER_EVALUATION):
             for scenario in range(SCENARIOS_PER_MAP):
-                self.run_single_scenario(heightmap, scenario, completed_scenarios, num_steps_to_run)
-                self.scenario_number += 1
+                if scenario_n == scenario_number:
+                    self.run_single_scenario(heightmap, scenario, completed_scenarios, num_steps_to_run)
+                    self.scenario_number += 1
+                scenario_n += 1
 
     def example(self):
-        '''Load an example chromosome.'''
+        """Load an example chromosome."""
         example_chromosome = np.load(f'{PATH}/example_rover.npy')
         return example_chromosome
 

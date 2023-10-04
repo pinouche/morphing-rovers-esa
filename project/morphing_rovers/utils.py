@@ -1,4 +1,12 @@
 from argparse import Namespace
+import yaml
+
+
+def load_config(config_file):
+    """Load config."""
+    with open(config_file) as yaml_file:
+        configs = yaml.safe_load(yaml_file)
+    return dict(configs)
 
 
 class Config(Namespace):
