@@ -180,11 +180,6 @@ node_modules
 # Files
 src/clm/gptj/clm_gptj.py
 
-**/**.pyc
-**/.p
-
-**/.cpython-310.pyc
-
-../__pycache__/__init__.cpython-310.pyc
-../__pycache__/morphing_udp.cpython-310.pyc
-../__pycache__/utils.cpython-310.pyc
+*.pyc
+**/__pycache__/
+.idea/misc.xml
