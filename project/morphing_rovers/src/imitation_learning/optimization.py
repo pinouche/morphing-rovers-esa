@@ -4,17 +4,22 @@ import numpy as np
 
 from torch.optim import Adam
 
+from morphing_rovers.src.imitation_learning.arc_trajectories import compute_both_arcs, get_coordinates
 from morphing_rovers.src.imitation_learning.morphing_udp_modified import morphing_rover_UDP, Rover, MAX_DA
 from morphing_rovers.utils import Config
 
 
 class OptimizeNetworkSupervised:
 
-    def __init__(self, options, chromosome, scenario_number, arcs):
+    def __init__(self, options, chromosome, scenario_number, radius):
         self.chromosome = chromosome
         self.options = options
         self.scenario_number = scenario_number
-        self.arcs = arcs
+
+        # arcs stuff
+        self.radius = radius
+        start, end = get_coordinates(self.scenario_number)
+        self.arcs = compute_both_arcs(start, end, self.radius)
 
         self.udp = morphing_rover_UDP()
         self.udp.rover = Rover(self.chromosome)
@@ -46,9 +51,9 @@ class OptimizeNetworkSupervised:
         self.udp.rover.training_data = []
         self.udp.rover.cluster_data = []
 
-    def load_data(self, n_iter):
+    def load_data(self, n_iter, arc):
 
-        self.udp.fitness(self.udp.rover, self.completed_scenarios, self.scenario_number, n_iter)
+        self.udp.fitness(self.udp.rover, self.completed_scenarios, self.scenario_number, n_iter, arc)
 
         print("LEN OF TRAINING DATA", len(self.udp.rover.training_data))
 
@@ -100,14 +105,15 @@ class OptimizeNetworkSupervised:
         return loss.item()
 
     def train(self, n_iter, train=True):
-        self.reset_data()
-        self.create_optimizer()
-        self.load_data(n_iter)
+        for arc in self.arcs:
+            self.reset_data()
+            self.create_optimizer()
+            self.load_data(n_iter, arc)
 
-        if train:
-            for iteration_step in range(self.config.n_iter_supervised_learning):
-                loss = self.train_step()
+            if train:
+                for iteration_step in range(self.config.n_iter_supervised_learning):
+                    loss = self.train_step()
 
-                # if (iteration_step + 1) % 10 == 0:
-                #     print(f"Computing for iteration number {iteration_step + 1}")
-                #     print(f"The average loss is: {loss}")
+                    # if (iteration_step + 1) % 10 == 0:
+                    #     print(f"Computing for iteration number {iteration_step + 1}")
+                    #     print(f"The average loss is: {loss}")

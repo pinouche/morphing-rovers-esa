@@ -713,11 +713,12 @@ class morphing_rover_UDP:
         """
         return 7
 
-    def fitness(self, rover, completed_scenarios, scenario_number, num_steps_to_run):
+    def fitness(self, rover, completed_scenarios, scenario_number, num_steps_to_run, arc):
         """
         Fitness function for the UDP
 
         Args:
+            arc: pre-computed trajectory for the rover to follow
             num_steps_to_run: num_steps to run for each scenario
             scenario_number: which scenario to compute for
             completed_scenarios: num_completed_scenarios
@@ -733,7 +734,7 @@ class morphing_rover_UDP:
         for heightmap in range(MAPS_PER_EVALUATION):
             for scenario in range(SCENARIOS_PER_MAP):
                 if scenario_n == scenario_number:
-                    self.run_single_scenario(heightmap, scenario, completed_scenarios, num_steps_to_run)
+                    self.run_single_scenario(heightmap, scenario, completed_scenarios, num_steps_to_run, arc)
                     self.scenario_number += 1
                 scenario_n += 1
 
@@ -742,7 +743,7 @@ class morphing_rover_UDP:
         example_chromosome = np.load(f'{PATH}/example_rover.npy')
         return example_chromosome
 
-    def run_single_scenario(self, map_number, scenario_number, completed_scenarios, num_steps_to_run):
+    def run_single_scenario(self, map_number, scenario_number, completed_scenarios, num_steps_to_run, arc):
 
         # Initialising the scenario
         position = SCENARIO_POSITIONS[map_number][scenario_number][0:2]

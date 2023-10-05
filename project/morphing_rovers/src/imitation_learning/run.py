@@ -8,7 +8,7 @@ from morphing_rovers.utils import load_config
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME
 from morphing_rovers.src.imitation_learning.optimization import OptimizeNetworkSupervised
 from morphing_rovers.src.utils import update_chromosome_with_mask, create_random_chromosome
-from morphing_rovers.src.imitation_learning.arc_trajectories import get_arc, get_coordinates
+from morphing_rovers.src.imitation_learning.arc_trajectories import get_coordinates
 
 PATH_CHROMOSOME = "../trained_chromosomes/chromosome_fitness_2.0211.p"
 
@@ -41,7 +41,7 @@ def func(i):
     start, end = get_coordinates(scenario_n)
     dist = np.sqrt((end-start)**2)
 
-    for radius in list(np.arange(dist/2+0.01, dist*2, dist/10)) + [1000]:
+    for radius in list(np.arange(dist/2+0.01, dist*2, dist/10)) + [1000]:  # 1000 is basically a straight line from to start to end
         best_fitness = np.inf
         for n_iter in range(1, MAX_TIME + 1):
             print(f"Optimizing network for the {n_iter} first rover's steps")
