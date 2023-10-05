@@ -8,6 +8,7 @@ from morphing_rovers.utils import load_config
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME
 from morphing_rovers.src.imitation_learning.optimization import OptimizeNetworkSupervised
 from morphing_rovers.src.utils import update_chromosome_with_mask, create_random_chromosome
+from morphing_rovers.src.imitation_learning.arc_trajectories import get_arc, get_coordinates
 
 PATH_CHROMOSOME = "../trained_chromosomes/chromosome_fitness_2.0211.p"
 
@@ -37,30 +38,34 @@ def func(i):
     fitness = udp.fitness(chromosome)[0]
     print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
-    best_fitness = np.inf
-    for n_iter in range(1, MAX_TIME + 1):
-        print(f"Optimizing network for the {n_iter} first rover's steps")
+    start, end = get_coordinates(scenario_n)
+    dist = np.sqrt((end-start)**2)
 
-        network_trainer = OptimizeNetworkSupervised(options, chromosome, scenario_n)
-        network_trainer.train(n_iter, train=True)
+    for radius in list(np.arange(dist/2+0.01, dist*2, dist/10)) + [1000]:
+        best_fitness = np.inf
+        for n_iter in range(1, MAX_TIME + 1):
+            print(f"Optimizing network for the {n_iter} first rover's steps")
 
-        chromosome = update_chromosome_with_mask(masks_tensors,
-                                                 network_trainer.udp.rover.Control.chromosome,
-                                                 always_switch=True)
+            network_trainer = OptimizeNetworkSupervised(options, chromosome, scenario_n, radius)
+            network_trainer.train(n_iter, train=True)
 
-        fitness = udp.fitness(chromosome)[0]
-        udp.pretty(chromosome)
-        udp.plot(chromosome)
+            chromosome = update_chromosome_with_mask(masks_tensors,
+                                                     network_trainer.udp.rover.Control.chromosome,
+                                                     always_switch=True)
 
-        print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
-              "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
+            fitness = udp.fitness(chromosome)[0]
+            udp.pretty(chromosome)
+            udp.plot(chromosome)
 
-        if fitness < best_fitness:
-            print("NEW BEST FITNESS!!")
-            if fitness < 2.05:
-                pickle.dump(chromosome,
-                            open(f"../trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
-            best_fitness = fitness
+            print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
+                  "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
+
+            if fitness < best_fitness:
+                print("NEW BEST FITNESS!!")
+                if fitness < 2.05:
+                    pickle.dump(chromosome,
+                                open(f"../trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
+                best_fitness = fitness
 
 
 if __name__ == "__main__":

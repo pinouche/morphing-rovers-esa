@@ -182,4 +182,4 @@ src/clm/gptj/clm_gptj.py
 
 *.pyc
 **/__pycache__/
-.idea/misc.xml
+**/.idea/misc.xml

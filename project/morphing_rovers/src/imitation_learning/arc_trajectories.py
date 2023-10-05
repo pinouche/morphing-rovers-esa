@@ -1,5 +1,14 @@
 import numpy as np
 import math
+import pandas as pd
+
+
+def get_coordinates(scenario_number):
+    coordinates = pd.read_csv("../../data/coordinates.txt", sep="\t", header=None)
+    coors = coordinates.loc[scenario_number][1:]
+    start, end = (coors[0], coors[1]), (coors[2], coors[3])
+
+    return start, end
 
 
 def get_centres(p, q, rad):
