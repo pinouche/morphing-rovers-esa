@@ -562,7 +562,7 @@ class Rover:
             distance_vector: the vector from the rover to the target
             original_distance: the scalar distance from the starting point to the target
         """
-        # Calculate angle and distance between rover and sample
+        # Calculate angle and distance between rover and sample. These lines count for the rover_state variable.
         angle_to_sample = atan2(distance_vector[1], distance_vector[0])
         distance_to_sample = distance_vector.norm() / original_distance
         angle_diff = minimal_angle_diff(angle_to_sample, self.angle)
@@ -570,6 +570,13 @@ class Rover:
         rover_state = torch.Tensor([self.mode_efficiency, self.cooldown / MODE_COOLDOWN, angle_diff / np.pi,
                                     float(distance_to_sample),
                                     self.angle / np.pi / 2] + self.onehot_representation_of_mode)
+
+        # TODO: compute the angle_diff using the sample_position from below to append to training_data's angle_diff.
+        # dist = np.sqrt(np.sum((position - arc) ** 2, axis=1))
+        # closest_point = np.argmin(dist)
+        # if closest_point != len(arc) - 1:
+        #     closest_point += 1
+        # sample_position = arc[closest_point]
 
         self.training_data.append(([rover_view.numpy(force=True), rover_state.numpy(force=True),
                                     self.latent_state.numpy(force=True)], [self.angle, angle_diff]))
@@ -762,7 +769,7 @@ class morphing_rover_UDP:
         for timestep in range(0, num_steps_to_run):
             rover_view, mode_view = self.env.extract_local_view(self.rover.position, self.rover.angle, map_number)
             self.rover.update_rover_state(rover_view, mode_view, distance_vector, original_distance,
-                                          self.scenario_number)
+                                          self.scenario_number, arc)
             distance_vector = sample_position - self.rover.position
             current_distance = distance_vector.norm()
 
