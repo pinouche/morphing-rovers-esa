@@ -11,15 +11,13 @@ from morphing_rovers.utils import Config
 
 class OptimizeNetworkSupervised:
 
-    def __init__(self, options, chromosome, scenario_number, radius):
+    def __init__(self, options, chromosome, scenario_number, arc):
         self.chromosome = chromosome
         self.options = options
         self.scenario_number = scenario_number
 
-        # arcs stuff
-        self.radius = radius
-        start, end = get_coordinates(self.scenario_number)
-        self.arcs = compute_both_arcs(start, end, self.radius)
+        # arc
+        self.arc = arc
 
         self.udp = morphing_rover_UDP()
         self.udp.rover = Rover(self.chromosome)
@@ -105,15 +103,14 @@ class OptimizeNetworkSupervised:
         return loss.item()
 
     def train(self, n_iter, train=True):
-        for arc in self.arcs:
-            self.reset_data()
-            self.create_optimizer()
-            self.load_data(n_iter, arc)
+        self.reset_data()
+        self.create_optimizer()
+        self.load_data(n_iter, self.arc)
 
-            if train:
-                for iteration_step in range(self.config.n_iter_supervised_learning):
-                    loss = self.train_step()
+        if train:
+            for iteration_step in range(self.config.n_iter_supervised_learning):
+                loss = self.train_step()
 
-                    # if (iteration_step + 1) % 10 == 0:
-                    #     print(f"Computing for iteration number {iteration_step + 1}")
-                    #     print(f"The average loss is: {loss}")
+                # if (iteration_step + 1) % 10 == 0:
+                #     print(f"Computing for iteration number {iteration_step + 1}")
+                #     print(f"The average loss is: {loss}")

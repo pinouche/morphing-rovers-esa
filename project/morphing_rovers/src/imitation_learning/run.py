@@ -8,7 +8,7 @@ from morphing_rovers.utils import load_config
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME
 from morphing_rovers.src.imitation_learning.optimization import OptimizeNetworkSupervised
 from morphing_rovers.src.utils import update_chromosome_with_mask, create_random_chromosome
-from morphing_rovers.src.imitation_learning.arc_trajectories import get_coordinates
+from morphing_rovers.src.imitation_learning.arc_trajectories import get_coordinates, compute_both_arcs
 
 PATH_CHROMOSOME = "../trained_chromosomes/chromosome_fitness_2.0211.p"
 
@@ -42,30 +42,32 @@ def func(i):
     dist = np.sqrt((end-start)**2)
 
     for radius in list(np.arange(dist/2+0.01, dist*2, dist/10)) + [1000]:  # 1000 is basically a straight line from to start to end
+        arcs = compute_both_arcs(start, end, radius)
         best_fitness = np.inf
-        for n_iter in range(1, MAX_TIME + 1):
-            print(f"Optimizing network for the {n_iter} first rover's steps")
+        for arc in arcs:  # we have the arc clockwise and the arc counter-clockwise
+            for n_iter in range(1, MAX_TIME + 1):
+                print(f"Optimizing network for the {n_iter} first rover's steps")
 
-            network_trainer = OptimizeNetworkSupervised(options, chromosome, scenario_n, radius)
-            network_trainer.train(n_iter, train=True)
+                network_trainer = OptimizeNetworkSupervised(options, chromosome, scenario_n, arc)
+                network_trainer.train(n_iter, train=True)
 
-            chromosome = update_chromosome_with_mask(masks_tensors,
-                                                     network_trainer.udp.rover.Control.chromosome,
-                                                     always_switch=True)
+                chromosome = update_chromosome_with_mask(masks_tensors,
+                                                         network_trainer.udp.rover.Control.chromosome,
+                                                         always_switch=True)
 
-            fitness = udp.fitness(chromosome)[0]
-            udp.pretty(chromosome)
-            udp.plot(chromosome)
+                fitness = udp.fitness(chromosome)[0]
+                udp.pretty(chromosome)
+                udp.plot(chromosome)
 
-            print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
-                  "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
+                print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
+                      "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
 
-            if fitness < best_fitness:
-                print("NEW BEST FITNESS!!")
-                if fitness < 2.05:
-                    pickle.dump(chromosome,
-                                open(f"../trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
-                best_fitness = fitness
+                if fitness < best_fitness:
+                    print("NEW BEST FITNESS!!")
+                    if fitness < 2.05:
+                        pickle.dump(chromosome,
+                                    open(f"../trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
+                    best_fitness = fitness
 
 
 if __name__ == "__main__":
