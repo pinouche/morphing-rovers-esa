@@ -1,12 +1,13 @@
 import numpy as np
 import math
 import pandas as pd
+import torch
 
 
 def get_coordinates(scenario_number):
     coordinates = pd.read_csv("../../data/coordinates.txt", sep="\t", header=None)
-    coors = coordinates.loc[scenario_number][1:]
-    start, end = (coors[0], coors[1]), (coors[2], coors[3])
+    coors = coordinates.loc[scenario_number][1:].values
+    start, end = np.array([coors[0], coors[1]]), np.array([coors[2], coors[3]])
 
     return start, end
 
@@ -51,3 +52,14 @@ def compute_both_arcs(q, p, radius):
         start_one, end_one, arc_points_one = get_arc(q, p, c1, radius, True)
 
     return arc_points_one, np.flip(arc_points_two)
+
+
+def get_closest_arc_point(rover_position, arc):
+
+    dist = np.sqrt(np.sum((rover_position - arc) ** 2, axis=1))
+    closest_point = np.argmin(dist)
+    if closest_point != len(arc) - 1:
+        closest_point += 1
+    closest_point = arc[closest_point]
+
+    return closest_point

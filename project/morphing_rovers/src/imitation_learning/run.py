@@ -29,6 +29,7 @@ def func(i):
     if os.path.exists(PATH_CHROMOSOME):
         print("Chromosome exists")
         chromosome = pickle.load(open(PATH_CHROMOSOME, "rb"))
+        chromosome[4*11*11:-7] = np.random.randn(len(chromosome[4*11*11:-7]))
         masks_tensors = [
             torch.tensor(np.reshape(chromosome[11 ** 2 * i:11 ** 2 * (i + 1)], (11, 11)), requires_grad=True) for i
             in range(4)]
@@ -39,7 +40,7 @@ def func(i):
     print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
     start, end = get_coordinates(scenario_n)
-    dist = np.sqrt((end-start)**2)
+    dist = np.sqrt(np.sum((end-start)**2))
 
     for radius in list(np.arange(dist/2+0.01, dist*2, dist/10)) + [1000]:  # 1000 is basically a straight line from to start to end
         arcs = compute_both_arcs(start, end, radius)

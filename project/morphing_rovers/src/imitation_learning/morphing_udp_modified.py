@@ -16,7 +16,7 @@ import torch.nn.functional as F
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms.functional import gaussian_blur, rotate
 
-from morphing_rovers.src.imitation_learning.arc_trajectories import compute_both_arcs
+from morphing_rovers.src.imitation_learning.arc_trajectories import get_closest_arc_point
 
 # CONSTANTS DEFINING THE PROBLEM
 #################################################################################################################
@@ -553,7 +553,8 @@ class Rover:
 
         return best_mode
 
-    def update_rover_state(self, rover_view, mode_view, distance_vector, original_distance, scenario_number):
+    def update_rover_state(self, rover_view, mode_view, distance_vector, original_distance, scenario_number,
+                           rover_position, arc):
         """
         Updates the rover state variables for the current timestep.
         Args:
@@ -562,7 +563,7 @@ class Rover:
             distance_vector: the vector from the rover to the target
             original_distance: the scalar distance from the starting point to the target
         """
-        # Calculate angle and distance between rover and sample. These lines count for the rover_state variable.
+        # Calculate angle and distance between rover and sample. These lines count for the rover_state variables.
         angle_to_sample = atan2(distance_vector[1], distance_vector[0])
         distance_to_sample = distance_vector.norm() / original_distance
         angle_diff = minimal_angle_diff(angle_to_sample, self.angle)
@@ -571,12 +572,13 @@ class Rover:
                                     float(distance_to_sample),
                                     self.angle / np.pi / 2] + self.onehot_representation_of_mode)
 
-        # TODO: compute the angle_diff using the sample_position from below to append to training_data's angle_diff.
-        # dist = np.sqrt(np.sum((position - arc) ** 2, axis=1))
-        # closest_point = np.argmin(dist)
-        # if closest_point != len(arc) - 1:
-        #     closest_point += 1
-        # sample_position = arc[closest_point]
+        # Compute the angle_diff to use in order to follow the arc
+        if isinstance(rover_position, torch.Tensor):
+            rover_position = rover_position.detach().numpy()
+        sample_position = get_closest_arc_point(rover_position, arc)
+        distance_vector = sample_position - rover_position
+        angle_to_sample = atan2(distance_vector[1], distance_vector[0])
+        angle_diff = minimal_angle_diff(angle_to_sample, self.angle)
 
         self.training_data.append(([rover_view.numpy(force=True), rover_state.numpy(force=True),
                                     self.latent_state.numpy(force=True)], [self.angle, angle_diff]))
@@ -769,7 +771,7 @@ class morphing_rover_UDP:
         for timestep in range(0, num_steps_to_run):
             rover_view, mode_view = self.env.extract_local_view(self.rover.position, self.rover.angle, map_number)
             self.rover.update_rover_state(rover_view, mode_view, distance_vector, original_distance,
-                                          self.scenario_number, arc)
+                                          self.scenario_number, self.rover.position, arc)
             distance_vector = sample_position - self.rover.position
             current_distance = distance_vector.norm()
 
