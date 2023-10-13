@@ -1,7 +1,6 @@
 import numpy as np
 import math
 import pandas as pd
-import torch
 
 
 def get_coordinates(scenario_number):
@@ -26,7 +25,7 @@ def get_centres(p, q, rad):
     return c
 
 
-def get_arc(p, q, c, r, counter_arc=False, num_points=100):
+def get_arc(p, q, c, r, counter_arc=False, num_points=200):
     factor = 0
     if counter_arc:
         factor = 2 * np.pi
@@ -35,7 +34,7 @@ def get_arc(p, q, c, r, counter_arc=False, num_points=100):
     end = 2 * math.atan((q[1] - c[1]) / (q[0] - c[0] + r))
 
     arc_points = np.array([c + r * np.array([np.cos(theta), np.sin(theta)]) for theta in
-                           np.arange(start, end, (end - start) / num_points)])
+                           np.arange(start, end, ((end - start) / num_points))])
 
     return start, end, arc_points
 
@@ -58,8 +57,9 @@ def get_closest_arc_point(rover_position, arc):
 
     dist = np.sqrt(np.sum((rover_position - arc) ** 2, axis=1))
     closest_point = np.argmin(dist)
-    if closest_point != len(arc) - 1:
-        closest_point += 1
+    #  print(len(arc) - closest_point)
+    # if len(arc) - closest_point > 5:
+    #     closest_point += 5
     closest_point = arc[closest_point]
-
+    # closest_point = arc[-1]
     return closest_point

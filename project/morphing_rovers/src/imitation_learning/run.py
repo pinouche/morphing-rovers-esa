@@ -10,6 +10,7 @@ from morphing_rovers.src.imitation_learning.optimization import OptimizeNetworkS
 from morphing_rovers.src.utils import update_chromosome_with_mask, create_random_chromosome
 from morphing_rovers.src.imitation_learning.arc_trajectories import get_coordinates, compute_both_arcs
 
+N_RUNS = 100
 PATH_CHROMOSOME = "../trained_chromosomes/chromosome_fitness_2.0211.p"
 
 config = load_config("config.yml")
@@ -36,39 +37,46 @@ def func(i):
     else:
         masks_tensors, chromosome = create_random_chromosome()
 
-    fitness = udp.fitness(chromosome)[0]
-    print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
+    # fitness = udp.fitness(chromosome)[0]
+    udp.pretty(chromosome)
+    # print("initial fitness", fitness, "overall speed", np.mean(udp.rover.overall_speed))
 
     start, end = get_coordinates(scenario_n)
     dist = np.sqrt(np.sum((end-start)**2))
 
-    for radius in list(np.arange(dist/2+0.01, dist*2, dist/10)) + [1000]:  # 1000 is basically a straight line from to start to end
+    # for radius in list(np.arange(dist/2, dist*2, dist/10)) + [1000]:  # 1000 is basically a straight line from to start to end
+    for radius in [1000]:
         arcs = compute_both_arcs(start, end, radius)
         best_fitness = np.inf
         for arc in arcs:  # we have the arc clockwise and the arc counter-clockwise
-            for n_iter in range(1, MAX_TIME + 1):
-                print(f"Optimizing network for the {n_iter} first rover's steps")
+            for i in range(N_RUNS):
+                print(f"Running for run number {i}")
+                for n_iter in range(MAX_TIME, MAX_TIME + 1):
+                    print(f"Optimizing network for the {n_iter} first rover's steps")
 
-                network_trainer = OptimizeNetworkSupervised(options, chromosome, scenario_n, arc)
-                network_trainer.train(n_iter, train=True)
+                    network_trainer = OptimizeNetworkSupervised(options, chromosome, scenario_n, arc)
+                    network_trainer.train(n_iter, train=True)
 
-                chromosome = update_chromosome_with_mask(masks_tensors,
-                                                         network_trainer.udp.rover.Control.chromosome,
-                                                         always_switch=True)
+                    chromosome = update_chromosome_with_mask(masks_tensors,
+                                                             network_trainer.udp.rover.Control.chromosome,
+                                                             always_switch=True)
 
-                fitness = udp.fitness(chromosome)[0]
-                udp.pretty(chromosome)
-                udp.plot(chromosome)
+                    # fitness = udp.fitness(chromosome)[0]
+                    udp.pretty(chromosome)
+                    # udp.plot(chromosome)
 
-                print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
-                      "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
+                    print("FITNESS AFTER PATH LEARNING", np.inf, "overall speed", np.mean(udp.rover.overall_speed),
+                          "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
 
-                if fitness < best_fitness:
-                    print("NEW BEST FITNESS!!")
-                    if fitness < 2.05:
-                        pickle.dump(chromosome,
-                                    open(f"../trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
-                    best_fitness = fitness
+                    # print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
+                    #       "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
+                    #
+                    # if fitness < best_fitness:
+                    #     print("NEW BEST FITNESS!!")
+                    #     if fitness < 2.05:
+                    #         pickle.dump(chromosome,
+                    #                     open(f"../trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
+                    #     best_fitness = fitness
 
 
 if __name__ == "__main__":

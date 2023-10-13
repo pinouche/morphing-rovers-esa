@@ -17,6 +17,8 @@ import torch.nn.functional as F
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms.functional import gaussian_blur, rotate
 
+from morphing_rovers.utils import load_config
+
 # CONSTANTS DEFINING THE PROBLEM
 #################################################################################################################
 
@@ -26,6 +28,9 @@ from torchvision.transforms.functional import gaussian_blur, rotate
 # coordinates: './myfolder/coordinates.txt'
 # example chromosome: './myfolder/example_rover.npy'
 PATH = os.path.join("..", "..", "data")
+
+config = load_config("config.yml")
+scenario_n = config["scenario_number"]
 
 # Parameters for the rover modes
 MASK_SIZE = 11
@@ -724,16 +729,25 @@ class morphing_rover_UDP:
 
         # Initialize score
         score = 0
-
+        counter = 0
         # Simulates N scenarios, records the results
         for heightmap in range(MAPS_PER_EVALUATION):
             for scenario in range(SCENARIOS_PER_MAP):
-                result = self.run_single_scenario(self.rover, heightmap, scenario, detailed_results)
-                ind_score = (1 + result[0]) * result[1]
+                if scenario_n == counter:
+                    result = self.run_single_scenario(self.rover, heightmap, scenario, detailed_results)
+                    ind_score = (1 + result[0]) * result[1]
+                else:
+                    ind_score = 0
+                    detailed_results.add(heightmap, scenario, {'x': 0,
+                                                               'y': 0,
+                                                               'mode': 0,
+                                                               'direction': 0,
+                                                               'mode_efficiency': 0})
                 score += ind_score
                 if detailed_results is not None:
                     detailed_results.add(heightmap, scenario, {'fitness': ind_score})
-        score = float(score / TOTAL_NUM_SCENARIOS)
+                counter += 1
+        # score = float(score / TOTAL_NUM_SCENARIOS)
 
         return [score]
 
@@ -855,6 +869,7 @@ class morphing_rover_UDP:
         self.plot_modes(chromosome)
 
         _, detailed_results = self.pretty(chromosome, verbose=False)
+        print("DETAILED RESULTS", detailed_results)
 
         _, ax = plt.subplots(MAPS_PER_EVALUATION, SCENARIOS_PER_MAP, figsize=(15, 15))
         for map_id in range(MAPS_PER_EVALUATION):
