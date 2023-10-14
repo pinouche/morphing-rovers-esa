@@ -30,7 +30,7 @@ def func(i):
     if os.path.exists(PATH_CHROMOSOME):
         print("Chromosome exists")
         chromosome = pickle.load(open(PATH_CHROMOSOME, "rb"))
-        chromosome[4*11*11:-7] = np.random.randn(len(chromosome[4*11*11:-7]))
+        # chromosome[4*11*11:-7] = np.random.randn(len(chromosome[4*11*11:-7]))
         masks_tensors = [
             torch.tensor(np.reshape(chromosome[11 ** 2 * i:11 ** 2 * (i + 1)], (11, 11)), requires_grad=True) for i
             in range(4)]
@@ -44,18 +44,19 @@ def func(i):
     start, end = get_coordinates(scenario_n)
     dist = np.sqrt(np.sum((end-start)**2))
 
-    # for radius in list(np.arange(dist/2, dist*2, dist/10)) + [1000]:  # 1000 is basically a straight line from to start to end
-    for radius in [1000]:
+    for radius in list(np.arange(dist/1.2, dist*2, dist/10)) + [1000]:  # 1000 is basically a straight line from to start to end
         arcs = compute_both_arcs(start, end, radius)
         best_fitness = np.inf
         for arc in arcs:  # we have the arc clockwise and the arc counter-clockwise
+            training_data = []
             for i in range(N_RUNS):
                 print(f"Running for run number {i}")
                 for n_iter in range(MAX_TIME, MAX_TIME + 1):
                     print(f"Optimizing network for the {n_iter} first rover's steps")
 
-                    network_trainer = OptimizeNetworkSupervised(options, chromosome, scenario_n, arc)
+                    network_trainer = OptimizeNetworkSupervised(options, chromosome, scenario_n, arc, training_data)
                     network_trainer.train(n_iter, train=True)
+                    training_data = network_trainer.training_data
 
                     chromosome = update_chromosome_with_mask(masks_tensors,
                                                              network_trainer.udp.rover.Control.chromosome,
@@ -63,7 +64,7 @@ def func(i):
 
                     # fitness = udp.fitness(chromosome)[0]
                     udp.pretty(chromosome)
-                    # udp.plot(chromosome)
+                    udp.plot(chromosome)
 
                     print("FITNESS AFTER PATH LEARNING", np.inf, "overall speed", np.mean(udp.rover.overall_speed),
                           "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))

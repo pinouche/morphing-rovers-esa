@@ -16,7 +16,7 @@ n_iter_mask_optimization: 250 # 250 normally
 learning_rate_mask_optimization: 0.05 # 0.05 normally
 
 # for supervised learning using the angle (path optimization)
-n_iter_supervised_learning: 150 # 100 normally
+n_iter_supervised_learning: 10 # 100 normally
 learning_rate_supervised_learning: 0.002 # 0.002 normally
 
 # for the evolution strategies

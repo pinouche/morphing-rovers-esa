@@ -11,7 +11,7 @@ from morphing_rovers.utils import Config
 
 class OptimizeNetworkSupervised:
 
-    def __init__(self, options, chromosome, scenario_number, arc):
+    def __init__(self, options, chromosome, scenario_number, arc, training_data):
         self.chromosome = chromosome
         self.options = options
         self.scenario_number = scenario_number
@@ -31,6 +31,8 @@ class OptimizeNetworkSupervised:
         self.rover_state = []
         self.latent_state = []
         self.data_y = []
+
+        self.training_data = training_data
 
         # completed scenarios
         self.completed_scenarios = 0
@@ -53,13 +55,14 @@ class OptimizeNetworkSupervised:
 
         self.udp.fitness(self.udp.rover, self.completed_scenarios, self.scenario_number, n_iter, arc)
 
-        print("LEN OF TRAINING DATA", len(self.udp.rover.training_data))
+        self.training_data += self.udp.rover.training_data
+        print("LEN OF TRAINING DATA", len(self.training_data), len(self.udp.rover.training_data))
 
-        for index in range(len(self.udp.rover.training_data)):
+        for index in range(len(self.training_data)):
 
             # collect the training data by running the simulation for the current chromosome
-            controller_input = self.udp.rover.training_data[index][0]
-            target = self.udp.rover.training_data[index][1][1]
+            controller_input = self.training_data[index][0]
+            target = self.training_data[index][1][1]
 
             if target < -np.pi / 4:
                 target = -np.pi / 4
@@ -103,7 +106,7 @@ class OptimizeNetworkSupervised:
         return loss.item()
 
     def train(self, n_iter, train=True):
-        self.reset_data()
+        # self.reset_data()
         self.create_optimizer()
         self.load_data(n_iter, self.arc)
 
