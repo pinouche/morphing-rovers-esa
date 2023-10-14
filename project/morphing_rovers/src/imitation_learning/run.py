@@ -44,10 +44,13 @@ def func(i):
     start, end = get_coordinates(scenario_n)
     dist = np.sqrt(np.sum((end-start)**2))
 
-    for radius in list(np.arange(dist/1.2, dist*2, dist/10)) + [1000]:  # 1000 is basically a straight line from to start to end
+    dic_result = dict()
+    for radius in list(np.arange(dist/1.5, dist*2, dist/10)) + [1000]:  # 1000 is basically a straight line from to start to end
         arcs = compute_both_arcs(start, end, radius)
         best_fitness = np.inf
+        arc_num = 0
         for arc in arcs:  # we have the arc clockwise and the arc counter-clockwise
+            dic_result[f"scenario_{scenario_n}_arc_{arc_num}_radius_{radius}"] = []
             training_data = []
             for i in range(N_RUNS):
                 print(f"Running for run number {i}")
@@ -63,11 +66,13 @@ def func(i):
                                                              always_switch=True)
 
                     # fitness = udp.fitness(chromosome)[0]
-                    udp.pretty(chromosome)
-                    udp.plot(chromosome)
+                    score, _ = udp.pretty(chromosome)
+                    # udp.plot(chromosome)
 
-                    print("FITNESS AFTER PATH LEARNING", np.inf, "overall speed", np.mean(udp.rover.overall_speed),
+                    print("FITNESS AFTER PATH LEARNING", score[0], "overall speed", np.mean(udp.rover.overall_speed),
                           "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
+
+                    dic_result[f"scenario_{scenario_n}_arc_{arc_num}_radius_{radius}"].append(score[0])
 
                     # print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
                     #       "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
@@ -78,6 +83,7 @@ def func(i):
                     #         pickle.dump(chromosome,
                     #                     open(f"../trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
                     #     best_fitness = fitness
+            arc_num += 1
 
 
 if __name__ == "__main__":
