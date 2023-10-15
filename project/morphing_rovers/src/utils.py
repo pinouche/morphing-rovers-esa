@@ -1,8 +1,26 @@
 import numpy as np
 import torch
+import pickle
+import os
 
 from morphing_rovers.src.mode_optimization.utils import velocity_function
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME, Rover
+
+
+def get_chromosome_from_path(path, random=False):
+
+    if os.path.exists(path):
+        print("Chromosome exists")
+        chromosome = pickle.load(open(path, "rb"))
+        if random:
+            chromosome[4*11*11:-7] = np.random.randn(len(chromosome[4*11*11:-7]))
+        masks_tensors = [
+            torch.tensor(np.reshape(chromosome[11 ** 2 * i:11 ** 2 * (i + 1)], (11, 11)), requires_grad=True) for i
+            in range(4)]
+    else:
+        masks_tensors, chromosome = create_random_chromosome()
+
+    return masks_tensors, chromosome
 
 
 def create_random_chromosome():
