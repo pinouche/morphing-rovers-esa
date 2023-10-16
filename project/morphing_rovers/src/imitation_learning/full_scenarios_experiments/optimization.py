@@ -4,8 +4,7 @@ import numpy as np
 
 from torch.optim import Adam
 
-from morphing_rovers.src.imitation_learning.arc_trajectories import compute_both_arcs, get_coordinates
-from morphing_rovers.src.imitation_learning.morphing_udp_modified import morphing_rover_UDP, Rover, MAX_DA
+from morphing_rovers.src.imitation_learning.single_scenario_experiments.morphing_udp_modified import morphing_rover_UDP, Rover, MAX_DA
 from morphing_rovers.utils import Config
 
 

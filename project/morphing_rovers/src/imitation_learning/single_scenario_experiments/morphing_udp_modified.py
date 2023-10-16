@@ -1,6 +1,5 @@
 # Morphing Rover Challenge
 # GECCO 2023 Space Optimisation Competition (SPoC)
-
 # LOADING PACKAGES
 #################################################################################################################
 
@@ -9,7 +8,6 @@ from collections import defaultdict
 from math import atan2, floor
 
 import imageio
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -17,19 +15,14 @@ import torch.nn.functional as F
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms.functional import gaussian_blur, rotate
 
+from morphing_rovers.src.imitation_learning.single_scenario_experiments.arc_trajectories import get_closest_arc_point
 from morphing_rovers.utils import load_config
 
 # CONSTANTS DEFINING THE PROBLEM
 #################################################################################################################
-
-# File path to the data required for this challenge
-# If the files are in the folder PATH = './myfolder', then the structure has to be:
-# maps: './myfolder/Maps'
-# coordinates: './myfolder/coordinates.txt'
-# example chromosome: './myfolder/example_rover.npy'
-PATH = os.path.join("..", "..", "..", "data")
-
 config = load_config("config.yml")
+
+PATH = os.path.join("../..", "..", "data")
 
 # Parameters for the rover modes
 MASK_SIZE = 11
@@ -339,7 +332,12 @@ class Controller(nn.Module):
         self.recurr = nn.Linear(NETWORK_SETUP['hidden_neurons'][1], NETWORK_SETUP['hidden_neurons'][1], bias=False)
         self.output = nn.Linear(NETWORK_SETUP['hidden_neurons'][1], 2)
 
-        self._turn_off_gradients()
+        weight_output = self.output.weight
+        output_mask = torch.zeros(weight_output.shape)
+        output_mask[:, 1] = 1
+        self.output.weight = nn.Parameter(weight_output * output_mask)
+
+        # self._turn_off_gradients()
 
         # Load weights and biases from chromosomes
         self._set_weights_from_chromosome(weight_chromosome)
@@ -487,8 +485,15 @@ class Rover:
         self.position = None  # position of the rover
         self.angle = 0  # orientation of the rover w.r.t. x-axis
         self.latent_state = None
+        self.angle_adjustment = 0
 
+        # extra data
         self.overall_speed = []
+        self.overall_distance = []
+
+        # build training data
+        self.training_data = []
+        self.cluster_data = []
 
     @property
     def chromosome(self):
@@ -549,7 +554,8 @@ class Rover:
 
         return best_mode
 
-    def update_rover_state(self, rover_view, mode_view, distance_vector, original_distance):
+    def update_rover_state(self, rover_view, mode_view, distance_vector, original_distance, scenario_number,
+                           rover_position, sample_position, arc):
         """
         Updates the rover state variables for the current timestep.
         Args:
@@ -558,26 +564,33 @@ class Rover:
             distance_vector: the vector from the rover to the target
             original_distance: the scalar distance from the starting point to the target
         """
-        # Calculate angle and distance between rover and sample
+        # Calculate angle and distance between rover and sample. These lines count for the rover_state variables.
         angle_to_sample = atan2(distance_vector[1], distance_vector[0])
         distance_to_sample = distance_vector.norm() / original_distance
-
-        # Turn angle to minimal angle (from -pi to pi)
         angle_diff = minimal_angle_diff(angle_to_sample, self.angle)
-        # Prepare state of the rover as input to the neural network
-        # Contains:
-        # - the efficiency of the current mode
-        # - normed cooldown length (between 0 and 1)
-        # - how well the orientation of the rover aligns with the target sample location
-        # - relative distance to target sample location
-        # - rover orientation
-        # - active rover mode (one-hot coded)
-        rover_state = torch.Tensor([self.mode_efficiency, self.cooldown / MODE_COOLDOWN, angle_diff / np.pi, \
+
+        rover_state = torch.Tensor([self.mode_efficiency, self.cooldown / MODE_COOLDOWN, angle_diff / np.pi,
                                     float(distance_to_sample),
                                     self.angle / np.pi / 2] + self.onehot_representation_of_mode)
-        # The neural network takes the rover view and rover state as input
-        # and returns whether the rover should morph and how the orientation should be changed
+
+        # print("LAST ARC POINT", arc[-1], "ACTUAL SAMPLE LOCATION", sample_position)
+        # Compute the angle_diff to use in order to follow the arc
+        if isinstance(rover_position, torch.Tensor):
+            rover_position = rover_position.detach().numpy()
+        sample_position = get_closest_arc_point(rover_position, arc)
+        distance_vector = sample_position - rover_position
+        angle_to_sample = atan2(distance_vector[1], distance_vector[0])
+        angle_diff_new = minimal_angle_diff(angle_to_sample, self.angle)
+
+        # print("ANGLE TO SAMPLE", angle_diff, "ANGLE TO ARC POINT", angle_diff_new)
+        ###
+
+        self.training_data.append(([rover_view.numpy(force=True), rover_state.numpy(force=True),
+                                    self.latent_state.numpy(force=True)], [self.angle, angle_diff_new]))
+
         switching_mode, angular_change, self.latent_state = self.Control(rover_view, rover_state, self.latent_state)
+
+        self.cluster_data.append((mode_view, self.current_mode, scenario_number))
 
         # Save angular velocity change obtained from neural network
         angular_velocity_factor = angular_change.detach().numpy()[0]
@@ -605,6 +618,7 @@ class Rover:
 
         # update position and orientation of the rover
         self.position.data = self.position + MAX_DV * velocity_factor * self.direction
+        self.angle_adjustment = MAX_DA * angular_velocity_factor
         self.angle = self.angle + MAX_DA * angular_velocity_factor
 
 
@@ -682,9 +696,10 @@ class morphing_rover_UDP:
         The rover defined by A must complete a series of routes across different terrains as quickly as possible using the same forms
         and controller each time.
         """
+        self.scenario_number = 0
+        self.rover = None
         # Create the planet!
         self.env = MysteriousMars()
-        self.rover = None
 
     def get_bounds(self):
         """
@@ -712,104 +727,38 @@ class morphing_rover_UDP:
         """
         return 7
 
-    def fitness(self, chromosome, scenario_n, detailed_results=None):
+    def fitness(self, rover, completed_scenarios, scenario_number, num_steps_to_run, arc):
         """
         Fitness function for the UDP
 
         Args:
-            scenario_n:
-            chromosome: the chromosome/decision vector to be tested
-            detailed_results: whether to record all the results from a scenario
-            pretty: if the pretty function is called, this returns scores for each map
+            arc: pre-computed trajectory for the rover to follow
+            num_steps_to_run: num_steps to run for each scenario
+            scenario_number: which scenario to compute for
+            completed_scenarios: num_completed_scenarios
+            rover: rover instance
         Returns:
             score: the score/fitness for this chromosome. Best value is 1.
         """
         # Create rover from chromosome
-        self.rover = Rover(chromosome)
+        self.rover = rover
 
-        # Initialize score
-        score = 0
-        counter = 0
+        scenario_n = 0
         # Simulates N scenarios, records the results
         for heightmap in range(MAPS_PER_EVALUATION):
             for scenario in range(SCENARIOS_PER_MAP):
-                if scenario_n == counter:
-                    result = self.run_single_scenario(self.rover, heightmap, scenario, detailed_results)
-                    ind_score = (1 + result[0]) * result[1]
-                else:
-                    ind_score = 0
-                    detailed_results.add(heightmap, scenario, {'x': 0,
-                                                               'y': 0,
-                                                               'mode': 0,
-                                                               'direction': 0,
-                                                               'mode_efficiency': 0})
-                score += ind_score
-                if detailed_results is not None:
-                    detailed_results.add(heightmap, scenario, {'fitness': ind_score})
-                counter += 1
-        # score = float(score / TOTAL_NUM_SCENARIOS)
-
-        return [score]
-
-    def pretty(self, chromosome, scenario_n, verbose=True):
-        '''
-        Returns both the fitness and a detailed recording for each scenario,
-        including rover trajectories, mode efficiencies, used modes and individual fitnesses.
-        Also prints a table of fitness values for each map and scenario if verbose is True.
-        Args:
-            chromosome: Chromosome to be tested.
-            verbose: Whether to print fitness values.
-        Returns:
-            score: Average fitness over all maps and scenarios
-            detailed_results: recording for each map and scenario, including rover trajectories etc.
-        '''
-        detailed_results = Record()
-        score = self.fitness(chromosome, scenario_n, detailed_results)
-
-        # Print fitness for all scenarios in terminal
-        if verbose is True:
-            scores = 'Fitness\n'
-            scores += '~~~~~~~\n'
-            scores += '\t     '
-            for i in range(SCENARIOS_PER_MAP):
-                scores += f'Scenario {i + 1}\t     '
-            scores += '\n'
-            for j in range(MAPS_PER_EVALUATION):
-                for i in range(SCENARIOS_PER_MAP):
-                    if i == 0:
-                        scores += f'Map {j + 1}\t |\t'
-                    scores += '{:.3f}\t | \t'.format(detailed_results[j][i]['fitness'][0])
-                scores += '\n'
-            scores += '\n'
-            scores += f'Avg. fitness: {score[0]:.3f}'
-            print(scores)
-
-        return score, detailed_results
+                if scenario_number == scenario_n:
+                    self.run_single_scenario(heightmap, scenario, completed_scenarios, num_steps_to_run, arc)
+                    self.scenario_number += 1
+                scenario_n += 1
 
     def example(self):
-        '''Load an example chromosome.'''
+        """Load an example chromosome."""
         example_chromosome = np.load(f'{PATH}/example_rover.npy')
         return example_chromosome
 
-    def run_single_scenario(self, rover, map_number, scenario_number, detailed_results=None):
-        """
-        Function for running a single scenario on a map given a rover.
-        Maximum simulation time is 500 timesteps, in which the neural network of the rover determines whether to switch
-        the rover's form and how to change the orientation of the rover at each timestep. Position updates are done
-        by comparing the terrain the rover is standing on with the mask of the active mode (using a function).
-        If the rover reaches a certain radius around the sample the scenario is completed early.
-        If the for loop ends or the rover travels outside of the map, the function records no samples saved and the time
-        returned is the maximum simulation time.
-        The simulations always begin with the rover in its first form, with the orientation aligned with the x-axis (eastward).
-        Args:
-            rover: the rover object to be used
-            map_number: index for which map the scenario will use
-            scenario_number: index for which positions the scenario will use
-        Returns:
-            d: the normalised distance of the rover from the target (normalised with original distance)
-            T: the normalised time taken for the scenario to complete (normalised with optimal time, i.e.,
-                                                                       going straight with max. velocity)
-        """
+    def run_single_scenario(self, map_number, scenario_number, completed_scenarios, num_steps_to_run, arc):
+
         # Initialising the scenario
         position = SCENARIO_POSITIONS[map_number][scenario_number][0:2]
         sample_position = SCENARIO_POSITIONS[map_number][scenario_number][2:4]
@@ -819,156 +768,28 @@ class morphing_rover_UDP:
         xmax = self.env.heightmap_sizes[map_number][1] - MIN_BORDER_DISTANCE
         ymax = self.env.heightmap_sizes[map_number][0] - MIN_BORDER_DISTANCE
 
-        rover.reset(position)
-        distance_vector = sample_position - rover.position
+        self.rover.reset(position)
+        distance_vector = sample_position - self.rover.position
         original_distance = distance_vector.norm()
-        min_time_possible = original_distance / MAX_VELOCITY
-
-        if detailed_results is not None:
-            detailed_results.add(map_number, scenario_number, {'x': position[0],
-                                                               'y': position[1],
-                                                               'mode': rover.current_mode,
-                                                               'direction': rover.angle / np.pi * 180,
-                                                               'mode_efficiency': rover.mode_efficiency})
 
         # Runs the scenario for X number of timesteps, where X is the max time / the time increment
-        for timestep in range(0, SIM_TIME_STEPS):
-            rover_view, mode_view = self.env.extract_local_view(rover.position, rover.angle, map_number)
-            rover.update_rover_state(rover_view, mode_view, distance_vector, original_distance)
-            distance_vector = sample_position - rover.position
-
-            if detailed_results is not None:
-                detailed_results.add(map_number, scenario_number, {'x': rover.position[0],
-                                                                   'y': rover.position[1],
-                                                                   'mode': rover.current_mode,
-                                                                   'direction': rover.angle / np.pi * 180,
-                                                                   'mode_efficiency': rover.mode_efficiency})
-
+        for timestep in range(0, num_steps_to_run):
+            rover_view, mode_view = self.env.extract_local_view(self.rover.position, self.rover.angle, map_number)
+            self.rover.update_rover_state(rover_view, mode_view, distance_vector, original_distance,
+                                          self.scenario_number, self.rover.position, sample_position, arc)
+            distance_vector = sample_position - self.rover.position
             current_distance = distance_vector.norm()
 
             # Check if the rover went out of bounds, if so return the maximum time and end the scenario
-            if not ((xmin <= rover.position[0] <= xmax) and (ymin <= rover.position[1] <= ymax)):
-                return current_distance / original_distance, MAX_TIME / min_time_possible
+            if not ((xmin <= self.rover.position[0] <= xmax) and (ymin <= self.rover.position[1] <= ymax)):
+                break
 
             # # Checks if the sample has been found, if so return [0, relative time needed] and end the scenario
             if current_distance <= SAMPLE_RADIUS:
-                return 0, timestep * DELTA_TIME / min_time_possible
+                completed_scenarios += 1
+                break
 
-        # If the for loop ends with no result, return end distance and maximum time
-        return current_distance / original_distance, MAX_TIME / min_time_possible
-
-    def plot(self, chromosome, scenario_n, plot_modes=False, plot_mode_efficiency=False):
-        """
-        This function acts the same as the fitness function, but also plots some of
-        the results for visualisation.
-        Args:
-            chromosome: decision vector/chromosome to be tested
-            plot_modes: plot modes over time for each scenario. Optional.
-            plot_mode_efficiency: plot mode efficiency over time for each scenario. Optional.
-        """
-        self.plot_modes(chromosome)
-
-        _, detailed_results = self.pretty(chromosome, scenario_n, verbose=False)
-        print("DETAILED RESULTS", detailed_results)
-
-        _, ax = plt.subplots(MAPS_PER_EVALUATION, SCENARIOS_PER_MAP, figsize=(15, 15))
-        for map_id in range(MAPS_PER_EVALUATION):
-            for scenario_id in range(SCENARIOS_PER_MAP):
-                ax_plot = ax_for_plotting(ax, map_id, scenario_id)
-                self._plot_trajectory_of_single_scenario(map_id, scenario_id, ax_plot, detailed_results)
-        ax_for_plotting(ax, 0, 0).set_title('Rover trajectories', fontsize=16)
-        plt.tight_layout()
-
-        if plot_modes is True:
-            _, ax = plt.subplots(MAPS_PER_EVALUATION, SCENARIOS_PER_MAP, sharex=True, sharey=True, figsize=(15, 15))
-            for map_id in range(MAPS_PER_EVALUATION):
-                for scenario_id in range(SCENARIOS_PER_MAP):
-                    ax_plot = ax_for_plotting(ax, map_id, scenario_id)
-                    self._plot_modes_of_single_scenario(map_id, scenario_id, ax_plot, detailed_results)
-            ax_for_plotting(ax, 0, 0).set_title('Rover modes', fontsize=16)
-        plt.tight_layout()
-
-        if plot_mode_efficiency is True:
-            _, ax = plt.subplots(MAPS_PER_EVALUATION, SCENARIOS_PER_MAP, sharex=True, sharey=True, figsize=(15, 15))
-            for map_id in range(MAPS_PER_EVALUATION):
-                for scenario_id in range(SCENARIOS_PER_MAP):
-                    ax_plot = ax_for_plotting(ax, map_id, scenario_id)
-                    self._plot_mode_efficiency_of_single_scenario(map_id, scenario_id, ax_plot, detailed_results)
-            ax_for_plotting(ax, 0, 0).set_title('Rover mode efficiency', fontsize=16)
-        plt.tight_layout()
-
-        plt.show()
-
-    def plot_modes(self, chromosome):
-        """
-        Plot the masks of the rover modes.
-
-        Args:
-            chromosome: decision vector/chromosome to be visualised.
-        """
-        _, ax = plt.subplots(1, NUMBER_OF_MODES, figsize=(10, 20))
-
-        masks = chromosome[:NUMBER_OF_MODES * MASK_SIZE ** 2]
-        masks = np.reshape(masks, (NUMBER_OF_MODES, MASK_SIZE, MASK_SIZE))
-
-        for i in range(NUMBER_OF_MODES):
-            ax[i].imshow(masks[i], cmap='terrain')
-            ax[i].set_xticks([])
-            ax[i].set_yticks([])
-        ax[0].set_title('Rover mode masks', fontsize=10)
-
-    def _plot_trajectory_of_single_scenario(self, map_id, scenario_id, ax, detailed_results):
-        """
-        Plots rover trajectory of a specific scenario using recorded data.
-
-        Args:
-            map_id: Map ID of the scenario.
-            scenario_id: Scenario ID.
-            ax: matplotlib ax for plotting.
-            detailed_results: recorded results.
-        """
-        ax.imshow(self.env.heightmaps[map_id].flip(0), origin='lower', cmap='terrain')
-
-        x_data = detailed_results[map_id][scenario_id]['x']
-        y_data = np.array(detailed_results[map_id][scenario_id]['y'])
-        ax.plot(x_data, y_data, color='k', linewidth=1.5)
-
-        # Plot the start, end and sample markers
-        ax.plot(SCENARIO_POSITIONS[map_id][scenario_id][0],
-                SCENARIO_POSITIONS[map_id][scenario_id][1], marker='o', markerfacecolor='blue')
-        ax.plot(x_data[-1], y_data[-1], marker='o', markerfacecolor='orange')
-        ax.plot(SCENARIO_POSITIONS[map_id][scenario_id][2],
-                SCENARIO_POSITIONS[map_id][scenario_id][3], marker='d', markersize=10, markerfacecolor='red')
-
-        ax.set_xticks([])
-        ax.set_yticks([])
-
-    def _plot_modes_of_single_scenario(self, map_id, scenario_id, ax, detailed_results):
-        """
-        Plots rover modes during a specific scenario using recorded data.
-
-        Args:
-            map_id: Map ID of the scenario.
-            scenario_id: Scenario ID.
-            ax: matplotlib ax for plotting.
-            detailed_results: recorded results.
-        """
-        y_data = detailed_results[map_id][scenario_id]['mode']
-        ax.plot(y_data, color='k', linewidth=1)
-        ax.set_yticks(range(NUMBER_OF_MODES))
-
-    def _plot_mode_efficiency_of_single_scenario(self, map_id, scenario_id, ax, detailed_results):
-        """
-        Plots rover mode efficiency of a specific scenario using recorded data.
-
-        Args:
-            map_id: Map ID of the scenario.
-            scenario_id: Scenario ID.
-            ax: matplotlib ax for plotting.
-            detailed_results: recorded results.
-        """
-        y_data = detailed_results[map_id][scenario_id]['mode_efficiency']
-        ax.plot(y_data, color='k', linewidth=1)
+            if timestep == num_steps_to_run - 1:
+                self.rover.overall_distance.append(current_distance)
 
 
-# udp = morphing_rover_UDP()

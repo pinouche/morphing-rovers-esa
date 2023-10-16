@@ -1,6 +1,5 @@
 # Morphing Rover Challenge
 # GECCO 2023 Space Optimisation Competition (SPoC)
-import copy
 # LOADING PACKAGES
 #################################################################################################################
 
@@ -16,14 +15,14 @@ import torch.nn.functional as F
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms.functional import gaussian_blur, rotate
 
-from morphing_rovers.src.imitation_learning.arc_trajectories import get_closest_arc_point
+from morphing_rovers.src.imitation_learning.single_scenario_experiments.arc_trajectories import get_closest_arc_point
 from morphing_rovers.utils import load_config
 
 # CONSTANTS DEFINING THE PROBLEM
 #################################################################################################################
 config = load_config("config.yml")
 
-PATH = os.path.join("..", "..", "data")
+PATH = os.path.join("../..", "..", "data")
 
 # Parameters for the rover modes
 MASK_SIZE = 11
