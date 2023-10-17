@@ -20,7 +20,7 @@ from morphing_rovers.utils import load_config
 
 # CONSTANTS DEFINING THE PROBLEM
 #################################################################################################################
-config = load_config("../config.yml")
+config = load_config("./full_scenarios_experiments/config.yml")
 SCENARIOS_LIST = config["scenarios"]
 SCENARIOS_RADIUS = config["best_scenario_radius"]
 SCENARIOS_ARC = config["best_scenario_arc"]
@@ -773,7 +773,7 @@ class morphing_rover_UDP:
         # code for the arc
         radius = SCENARIOS_RADIUS[scenario_counter]
         arc_num = SCENARIOS_ARC[scenario_counter]
-        arcs = compute_both_arcs(sample_position[0], sample_position[1], radius)
+        arcs = compute_both_arcs(position.numpy(), sample_position.numpy(), radius)
         arc = arcs[arc_num]
 
         xmin = MIN_BORDER_DISTANCE

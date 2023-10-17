@@ -12,7 +12,7 @@ from morphing_rovers.src.imitation_learning.single_scenario_experiments.arc_traj
 N_RUNS = 100
 PATH_CHROMOSOME = "../../trained_chromosomes/chromosome_fitness_2.0211.p"
 
-config = load_config("../config.yml")
+config = load_config("./full_scenarios_experiments/config.yml")
 
 
 def func(i):

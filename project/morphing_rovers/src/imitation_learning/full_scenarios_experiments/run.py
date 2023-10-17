@@ -9,9 +9,9 @@ from morphing_rovers.src.imitation_learning.full_scenarios_experiments.optimizat
 from morphing_rovers.src.utils import update_chromosome_with_mask, get_chromosome_from_path
 
 N_RUNS = 100
-PATH_CHROMOSOME = "../../trained_chromosomes/chromosome_fitness_2.0211.p"
+PATH_CHROMOSOME = "../trained_chromosomes/chromosome_fitness_2.0211.p"
 
-config = load_config("../config.yml")
+config = load_config("./full_scenarios_experiments/config.yml")
 SCENARIOS_LIST = config["scenarios"]
 
 
@@ -40,7 +40,7 @@ def func(i):
                                                      always_switch=True)
 
             score, _ = udp.pretty(chromosome, SCENARIOS_LIST)
-            # udp.plot(chromosome)
+            # udp.plot(chromosome, SCENARIOS_LIST)
 
             print("FITNESS AFTER PATH LEARNING", score[0], "overall speed", np.mean(udp.rover.overall_speed),
                   "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))

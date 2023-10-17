@@ -49,7 +49,7 @@ class OptimizeNetworkSupervised:
     def load_data(self, n_iter):
 
         self.udp.fitness(self.udp.rover, self.completed_scenarios, n_iter)
-
+        # self.training_data = self.udp.rover.training_data
         self.training_data += self.udp.rover.training_data
 
         print("LEN OF TRAINING DATA", len(self.training_data), len(self.udp.rover.training_data))
