@@ -27,9 +27,9 @@ from morphing_rovers.utils import load_config
 # maps: './myfolder/Maps'
 # coordinates: './myfolder/coordinates.txt'
 # example chromosome: './myfolder/example_rover.npy'
-PATH = os.path.join("..", "..", "..", "data")
+PATH = os.path.join("..", "..", "data")
 
-config = load_config("config.yml")
+config = load_config("../config.yml")
 
 # Parameters for the rover modes
 MASK_SIZE = 11

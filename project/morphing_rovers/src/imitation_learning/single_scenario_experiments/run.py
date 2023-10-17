@@ -12,7 +12,7 @@ from morphing_rovers.src.imitation_learning.single_scenario_experiments.arc_traj
 N_RUNS = 100
 PATH_CHROMOSOME = "../../trained_chromosomes/chromosome_fitness_2.0211.p"
 
-config = load_config("config.yml")
+config = load_config("../config.yml")
 
 
 def func(i):
@@ -24,7 +24,7 @@ def func(i):
 
     udp = morphing_rover_UDP()
 
-    for scenario_n in range(3, 30):
+    for scenario_n in range(4, 30):
         start, end = get_coordinates(scenario_n)
         dist = np.sqrt(np.sum((end-start)**2))
 

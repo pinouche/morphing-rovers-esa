@@ -15,14 +15,14 @@ import torch.nn.functional as F
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms.functional import gaussian_blur, rotate
 
-from morphing_rovers.src.imitation_learning.single_scenario_experiments.arc_trajectories import get_closest_arc_point
+from morphing_rovers.src.imitation_learning.single_scenario_experiments.arc_trajectories import get_closest_arc_point, compute_both_arcs
 from morphing_rovers.utils import load_config
 
 # CONSTANTS DEFINING THE PROBLEM
 #################################################################################################################
-config = load_config("config.yml")
+config = load_config("../config.yml")
 
-PATH = os.path.join("../..", "..", "data")
+PATH = os.path.join("..", "..", "data")
 
 # Parameters for the rover modes
 MASK_SIZE = 11
@@ -555,10 +555,13 @@ class Rover:
         return best_mode
 
     def update_rover_state(self, rover_view, mode_view, distance_vector, original_distance, scenario_number,
-                           rover_position, sample_position, arc):
+                           rover_position, arc):
         """
         Updates the rover state variables for the current timestep.
         Args:
+            scenario_number:
+            rover_position:
+            arc:
             rover_view: the view (top-down, unrotated) of the local terrain
             mode_view: the terrain the rover is standing on
             distance_vector: the vector from the rover to the target
@@ -757,11 +760,16 @@ class morphing_rover_UDP:
         example_chromosome = np.load(f'{PATH}/example_rover.npy')
         return example_chromosome
 
-    def run_single_scenario(self, map_number, scenario_number, completed_scenarios, num_steps_to_run, arc):
+    def run_single_scenario(self, map_number, scenario_number, completed_scenarios, num_steps_to_run, snenario_counter):
 
         # Initialising the scenario
         position = SCENARIO_POSITIONS[map_number][scenario_number][0:2]
         sample_position = SCENARIO_POSITIONS[map_number][scenario_number][2:4]
+
+        # code for the arc
+        radius = 0
+        arcs = compute_both_arcs(sample_position[0], sample_position[1], radius)
+        arc = arcs[0]
 
         xmin = MIN_BORDER_DISTANCE
         ymin = MIN_BORDER_DISTANCE
@@ -776,7 +784,7 @@ class morphing_rover_UDP:
         for timestep in range(0, num_steps_to_run):
             rover_view, mode_view = self.env.extract_local_view(self.rover.position, self.rover.angle, map_number)
             self.rover.update_rover_state(rover_view, mode_view, distance_vector, original_distance,
-                                          self.scenario_number, self.rover.position, sample_position, arc)
+                                          self.scenario_number, self.rover.position, arc)
             distance_vector = sample_position - self.rover.position
             current_distance = distance_vector.norm()
 

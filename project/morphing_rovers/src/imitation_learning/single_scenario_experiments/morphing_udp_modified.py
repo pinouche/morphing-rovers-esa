@@ -20,9 +20,9 @@ from morphing_rovers.utils import load_config
 
 # CONSTANTS DEFINING THE PROBLEM
 #################################################################################################################
-config = load_config("config.yml")
+config = load_config("../config.yml")
 
-PATH = os.path.join("../..", "..", "data")
+PATH = os.path.join("..", "..", "data")
 
 # Parameters for the rover modes
 MASK_SIZE = 11

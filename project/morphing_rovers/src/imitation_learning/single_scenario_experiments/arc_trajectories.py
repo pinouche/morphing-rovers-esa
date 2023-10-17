@@ -4,7 +4,7 @@ import pandas as pd
 
 
 def get_coordinates(scenario_number):
-    coordinates = pd.read_csv("../../../data/coordinates.txt", sep="\t", header=None)
+    coordinates = pd.read_csv("../../data/coordinates.txt", sep="\t", header=None)
     coors = coordinates.loc[scenario_number][1:].values
     start, end = np.array([coors[0], coors[1]]), np.array([coors[2], coors[3]])
 
