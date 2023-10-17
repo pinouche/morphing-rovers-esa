@@ -1,1 +1,20 @@
-scenario_n: 2
+scenarios:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+
+best_scenario_radius:
+  - 11000
+  - 2500
+  - 6344.6
+  - 16682.94
+  - 1448.77
+  
+best_scenario_arc:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0

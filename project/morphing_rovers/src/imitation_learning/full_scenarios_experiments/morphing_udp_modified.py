@@ -21,6 +21,10 @@ from morphing_rovers.utils import load_config
 # CONSTANTS DEFINING THE PROBLEM
 #################################################################################################################
 config = load_config("../config.yml")
+SCENARIOS_LIST = config["scenarios"]
+SCENARIOS_RADIUS = config["best_scenario_radius"]
+SCENARIOS_ARC = config["best_scenario_arc"]
+
 
 PATH = os.path.join("..", "..", "data")
 
@@ -730,7 +734,7 @@ class morphing_rover_UDP:
         """
         return 7
 
-    def fitness(self, rover, completed_scenarios, scenario_number, num_steps_to_run, arc):
+    def fitness(self, rover, completed_scenarios, num_steps_to_run):
         """
         Fitness function for the UDP
 
@@ -750,8 +754,8 @@ class morphing_rover_UDP:
         # Simulates N scenarios, records the results
         for heightmap in range(MAPS_PER_EVALUATION):
             for scenario in range(SCENARIOS_PER_MAP):
-                if scenario_number == scenario_n:
-                    self.run_single_scenario(heightmap, scenario, completed_scenarios, num_steps_to_run, arc)
+                if scenario_n in SCENARIOS_LIST:
+                    self.run_single_scenario(heightmap, scenario, completed_scenarios, num_steps_to_run, scenario_n)
                     self.scenario_number += 1
                 scenario_n += 1
 
@@ -760,16 +764,17 @@ class morphing_rover_UDP:
         example_chromosome = np.load(f'{PATH}/example_rover.npy')
         return example_chromosome
 
-    def run_single_scenario(self, map_number, scenario_number, completed_scenarios, num_steps_to_run, snenario_counter):
+    def run_single_scenario(self, map_number, scenario_number, completed_scenarios, num_steps_to_run, scenario_counter):
 
         # Initialising the scenario
         position = SCENARIO_POSITIONS[map_number][scenario_number][0:2]
         sample_position = SCENARIO_POSITIONS[map_number][scenario_number][2:4]
 
         # code for the arc
-        radius = 0
+        radius = SCENARIOS_RADIUS[scenario_counter]
+        arc_num = SCENARIOS_ARC[scenario_counter]
         arcs = compute_both_arcs(sample_position[0], sample_position[1], radius)
-        arc = arcs[0]
+        arc = arcs[arc_num]
 
         xmin = MIN_BORDER_DISTANCE
         ymin = MIN_BORDER_DISTANCE

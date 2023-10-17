@@ -4,19 +4,15 @@ import numpy as np
 
 from torch.optim import Adam
 
-from morphing_rovers.src.imitation_learning.single_scenario_experiments.morphing_udp_modified import morphing_rover_UDP, Rover, MAX_DA
+from morphing_rovers.src.imitation_learning.full_scenarios_experiments.morphing_udp_modified import morphing_rover_UDP, Rover, MAX_DA
 from morphing_rovers.utils import Config
 
 
 class OptimizeNetworkSupervised:
 
-    def __init__(self, options, chromosome, scenario_number, arc, training_data):
+    def __init__(self, options, chromosome, training_data):
         self.chromosome = chromosome
         self.options = options
-        self.scenario_number = scenario_number
-
-        # arc
-        self.arc = arc
 
         self.udp = morphing_rover_UDP()
         self.udp.rover = Rover(self.chromosome)
@@ -50,9 +46,9 @@ class OptimizeNetworkSupervised:
         self.udp.rover.training_data = []
         self.udp.rover.cluster_data = []
 
-    def load_data(self, n_iter, arc):
+    def load_data(self, n_iter):
 
-        self.udp.fitness(self.udp.rover, self.completed_scenarios, self.scenario_number, n_iter, arc)
+        self.udp.fitness(self.udp.rover, self.completed_scenarios, n_iter)
 
         self.training_data += self.udp.rover.training_data
 
@@ -108,7 +104,7 @@ class OptimizeNetworkSupervised:
     def train(self, n_iter, train=True):
         # self.reset_data()
         self.create_optimizer()
-        self.load_data(n_iter, self.arc)
+        self.load_data(n_iter)
 
         if train:
             for iteration_step in range(self.config.n_iter_supervised_learning):

@@ -733,7 +733,7 @@ class morphing_rover_UDP:
         # Simulates N scenarios, records the results
         for heightmap in range(MAPS_PER_EVALUATION):
             for scenario in range(SCENARIOS_PER_MAP):
-                if scenario_n == counter:
+                if counter in scenario_n:
                     result = self.run_single_scenario(self.rover, heightmap, scenario, detailed_results)
                     ind_score = (1 + result[0]) * result[1]
                 else:
