@@ -10,7 +10,7 @@ from morphing_rovers.src.utils import update_chromosome_with_mask, get_chromosom
 from morphing_rovers.src.imitation_learning.single_scenario_experiments.arc_trajectories import get_coordinates, compute_both_arcs
 
 N_RUNS = 100
-PATH_CHROMOSOME = "../../trained_chromosomes/chromosome_fitness_2.0211.p"
+PATH_CHROMOSOME = "./../trained_chromosomes/chromosome_fitness_2.0211.p"
 
 config = load_config("./full_scenarios_experiments/config.yml")
 
@@ -35,7 +35,7 @@ def func(i):
             arc_num = 0
             arcs = compute_both_arcs(start, end, radius)
             masks_tensors, chromosome = get_chromosome_from_path(PATH_CHROMOSOME)
-            for arc in arcs:  # we have the arc clockwise and the arc counter-clockwise
+            for arc in [arcs[0]]:  # we have the arc clockwise and the arc counter-clockwise
                 dic_result[f"scenario_{scenario_n}_arc_{arc_num}_radius_{np.round(radius, 2)}"] = []
                 training_data = []
                 for i in range(N_RUNS):
@@ -52,7 +52,7 @@ def func(i):
                                                                  always_switch=True)
 
                         score, _ = udp.pretty(chromosome, scenario_n)
-                        # udp.plot(chromosome)
+                        # udp.plot(chromosome, scenario_n)
 
                         print("FITNESS AFTER PATH LEARNING", score[0], "overall speed", np.mean(udp.rover.overall_speed),
                               "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
@@ -69,7 +69,8 @@ def func(i):
                         #                     open(f"../trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
                         #     best_fitness = fitness
                 arc_num += 1
-            pickle.dump(dic_result, open(f"./results/scenario_{scenario_n}_arc_{arc_num}_radius_{np.round(radius, 2)}.p", "wb"))
+            pickle.dump(dic_result, open(f"./single_scenario_experiments/results/scenario_4/"
+                                         f"scenario_{scenario_n}_arc_{arc_num}_radius_{np.round(radius, 2)}.p", "wb"))
 
 
 if __name__ == "__main__":

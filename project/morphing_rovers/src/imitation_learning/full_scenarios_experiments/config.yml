@@ -11,6 +11,13 @@ best_scenario_radius:
   - 6344.6
   - 16682.94
   - 1448.77
+
+#best_scenario_radius:
+#  - 10000
+#  - 10000
+#  - 10000
+#  - 10000
+#  - 10000
   
 best_scenario_arc:
   - 0

@@ -58,8 +58,8 @@ def get_closest_arc_point(rover_position, arc):
     dist = np.sqrt(np.sum((rover_position - arc) ** 2, axis=1))
     closest_point = np.argmin(dist)
     #  print(len(arc) - closest_point)
-    if len(arc) - closest_point > 2:
-        closest_point += 2
+    if len(arc) - closest_point > 1:
+        closest_point += 1
     closest_point = arc[closest_point]
     # closest_point = arc[-1]
     return closest_point
