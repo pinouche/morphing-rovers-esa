@@ -2,6 +2,7 @@ import pickle
 import numpy as np
 import argparse
 import torch
+import os
 
 from morphing_rovers.utils import load_config
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME
@@ -68,9 +69,11 @@ def func(i):
                         #         pickle.dump(chromosome,
                         #                     open(f"../trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
                         #     best_fitness = fitness
-                arc_num += 1
-            pickle.dump(dic_result, open(f"./single_scenario_experiments/results/scenario_4/"
-                                         f"scenario_{scenario_n}_arc_{arc_num}_radius_{np.round(radius, 2)}.p", "wb"))
+
+            folder_path = f"./single_scenario_experiments/results/scenario_{scenario_n}"
+            if not os.path.exists(folder_path):
+                os.mkdir(folder_path)
+            pickle.dump(dic_result, open(f"{folder_path}/scenario_{scenario_n}_arc_{arc_num}_radius_{np.round(radius, 2)}.p", "wb"))
 
 
 if __name__ == "__main__":
