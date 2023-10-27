@@ -17,7 +17,7 @@ config = load_config("./full_scenarios_experiments/config.yml")
 
 
 def func(i):
-    torch.manual_seed(i)  # add 10 every time to add randomness
+    torch.manual_seed(i)
 
     options = argparse.ArgumentParser(description='Model config')
     options.add_argument('--config', type=str, default='', help='Path of the config file')
@@ -25,7 +25,7 @@ def func(i):
 
     udp = morphing_rover_UDP()
 
-    for scenario_n in range(4, 30):
+    for scenario_n in range(11, 30):
         start, end = get_coordinates(scenario_n)
         dist = np.sqrt(np.sum((end-start)**2))
 
