@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms.functional import gaussian_blur, rotate
 
-from morphing_rovers.src.imitation_learning.single_scenario_experiments.arc_trajectories import get_closest_arc_point, compute_both_arcs
+from morphing_rovers.src.imitation_learning.single_scenario_experiments.arc_trajectories import get_closest_arc_point, compute_both_arcs, get_coordinates
 from morphing_rovers.utils import load_config
 
 # CONSTANTS DEFINING THE PROBLEM
@@ -771,8 +771,13 @@ class morphing_rover_UDP:
         sample_position = SCENARIO_POSITIONS[map_number][scenario_number][2:4]
 
         # code for the arc
-        radius = SCENARIOS_RADIUS[scenario_counter]
+        factor = SCENARIOS_RADIUS[scenario_counter]
         arc_num = SCENARIOS_ARC[scenario_counter]
+
+        start, end = get_coordinates(scenario_counter)
+        dist = np.sqrt(np.sum((end - start) ** 2))
+        radius = factor*dist
+
         arcs = compute_both_arcs(position.numpy(), sample_position.numpy(), radius)
         arc = arcs[arc_num]
 

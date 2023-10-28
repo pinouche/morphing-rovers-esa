@@ -24,7 +24,7 @@ def func(i):
 
     udp = morphing_rover_UDP()
 
-    masks_tensors, chromosome = get_chromosome_from_path(PATH_CHROMOSOME)
+    masks_tensors, chromosome = get_chromosome_from_path(PATH_CHROMOSOME, False)
     training_data = []
     for i in range(N_RUNS):
         print(f"Running for run number {i}")
@@ -44,16 +44,6 @@ def func(i):
 
             print("FITNESS AFTER PATH LEARNING", score[0], "overall speed", np.mean(udp.rover.overall_speed),
                   "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
-
-            # print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
-            #       "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))
-            #
-            # if fitness < best_fitness:
-            #     print("NEW BEST FITNESS!!")
-            #     if fitness < 2.05:
-            #         pickle.dump(chromosome,
-            #                     open(f"../trained_chromosomes/chromosome_fitness_{round(fitness, 4)}.p", "wb"))
-            #     best_fitness = fitness
 
 
 if __name__ == "__main__":
