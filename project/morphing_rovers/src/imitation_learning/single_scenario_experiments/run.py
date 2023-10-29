@@ -13,8 +13,6 @@ from morphing_rovers.src.imitation_learning.single_scenario_experiments.arc_traj
 N_RUNS = 50
 PATH_CHROMOSOME = "./../trained_chromosomes/chromosome_fitness_2.0211.p"
 
-config = load_config("./full_scenarios_experiments/config.yml")
-
 
 def func(i):
     torch.manual_seed(i)
@@ -25,12 +23,11 @@ def func(i):
 
     udp = morphing_rover_UDP()
 
-    for scenario_n in [2, 3, 4, 5, 8, 12, 24, 25, 27, 29]:
+    for scenario_n in [16, 19]:
         start, end = get_coordinates(scenario_n)
         dist = np.sqrt(np.sum((end-start)**2))
-        radius = dist
-        for factor in np.arange(1, 10, 1):
-            radius *= factor
+        for factor in np.arange(3, 10, 1):
+            radius = factor * dist
             print(f"Computing for factor {factor} and radius {radius}.")
             dic_result = dict()
             arc_num = 0

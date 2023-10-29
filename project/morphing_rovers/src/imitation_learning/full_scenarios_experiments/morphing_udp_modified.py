@@ -21,9 +21,9 @@ from morphing_rovers.utils import load_config
 # CONSTANTS DEFINING THE PROBLEM
 #################################################################################################################
 config = load_config("./full_scenarios_experiments/config.yml")
-SCENARIOS_LIST = config["scenarios"]
-SCENARIOS_RADIUS = config["best_scenario_radius"]
-SCENARIOS_ARC = config["best_scenario_arc"]
+SCENARIOS_LIST = list(config["radius_dictionary"].keys())
+SCENARIOS_RADIUS = config["radius_dictionary"]
+SCENARIOS_ARC = config["arc_dictionary"]
 
 
 PATH = os.path.join("..", "..", "data")

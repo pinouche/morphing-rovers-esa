@@ -12,7 +12,7 @@ N_RUNS = 100
 PATH_CHROMOSOME = "../trained_chromosomes/chromosome_fitness_2.0211.p"
 
 config = load_config("./full_scenarios_experiments/config.yml")
-SCENARIOS_LIST = config["scenarios"]
+SCENARIOS_LIST = list(config["radius_dictionary"].keys())
 
 
 def func(i):

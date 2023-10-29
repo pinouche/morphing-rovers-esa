@@ -51,7 +51,7 @@ class OptimizeNetworkSupervised:
         self.udp.fitness(self.udp.rover, self.completed_scenarios, n_iter)
         # self.training_data = self.udp.rover.training_data
         self.training_data += self.udp.rover.training_data
-        self.training_data = self.training_data[-50000:]
+        self.training_data = self.training_data[-5000:]
 
         print("LEN OF TRAINING DATA", len(self.training_data), len(self.udp.rover.training_data))
 
