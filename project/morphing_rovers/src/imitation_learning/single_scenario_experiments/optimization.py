@@ -53,6 +53,7 @@ class OptimizeNetworkSupervised:
     def load_data(self, n_iter, arc):
 
         self.udp.fitness(self.udp.rover, self.completed_scenarios, self.scenario_number, n_iter, arc)
+        # self.training_data = self.udp.rover.training_data
         self.training_data += self.udp.rover.training_data
         self.training_data = self.training_data[-5000:]
 

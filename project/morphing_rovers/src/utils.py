@@ -12,11 +12,13 @@ def get_chromosome_from_path(path, random=False):
     if os.path.exists(path):
         print("Chromosome exists")
         chromosome = pickle.load(open(path, "rb"))
-        if random:
-            chromosome[4*11*11:-7] = np.random.randn(len(chromosome[4*11*11:-7]))
         masks_tensors = [
             torch.tensor(np.reshape(chromosome[11 ** 2 * i:11 ** 2 * (i + 1)], (11, 11)), requires_grad=True) for i
             in range(4)]
+        if random:
+            _, random_weights = create_random_chromosome()
+            chromosome[4*11*11:] = random_weights[4*11*11:]
+
     else:
         masks_tensors, chromosome = create_random_chromosome()
 
@@ -72,15 +74,6 @@ def update_chromosome_with_mask(masks_tensors, chromosome, always_switch=True):
         chromosome[628] = 0
 
     return chromosome
-
-
-def fitness_wrapper(x):
-
-    func = morphing_rover_UDP().fitness
-    fitness = round(func(x)[0], 4)
-    print(f"the fitness is {fitness}")
-
-    return fitness
 
 
 def compute_average_best_velocity(means_views, masks_list):

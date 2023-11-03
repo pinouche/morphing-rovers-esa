@@ -23,22 +23,22 @@ def func(i):
 
     udp = morphing_rover_UDP()
 
-    for scenario_n in [16, 19]:
+    for scenario_n in [16]:
         start, end = get_coordinates(scenario_n)
         dist = np.sqrt(np.sum((end-start)**2))
-        for factor in np.arange(3, 10, 1):
+        for factor in np.arange(1, 10, 0.5):
             radius = factor * dist
             print(f"Computing for factor {factor} and radius {radius}.")
             dic_result = dict()
             arc_num = 0
             arcs = compute_both_arcs(start, end, radius)
-            masks_tensors, chromosome = get_chromosome_from_path(PATH_CHROMOSOME)
+            masks_tensors, chromosome = get_chromosome_from_path(PATH_CHROMOSOME, True)
             for arc in [arcs[0]]:  # we have the arc clockwise and the arc counter-clockwise
                 dic_result[f"scenario_{scenario_n}_arc_{arc_num}_radius_{np.round(factor, 2)}"] = []
                 training_data = []
                 for i in range(N_RUNS):
                     print(f"Running for run number {i}")
-                    for n_iter in range(MAX_TIME, MAX_TIME + 1):
+                    for n_iter in range(1, MAX_TIME + 1):
                         print(f"Optimizing network for the {n_iter} first rover's steps")
 
                         network_trainer = OptimizeNetworkSupervised(options, chromosome, scenario_n, arc, training_data)
