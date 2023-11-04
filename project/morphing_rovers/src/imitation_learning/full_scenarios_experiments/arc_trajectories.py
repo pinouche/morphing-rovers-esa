@@ -50,7 +50,7 @@ def compute_both_arcs(q, p, radius):
     if start_one > end_one:
         start_one, end_one, arc_points_one = get_arc(q, p, c1, radius, True)
 
-    return np.flip(arc_points_one),
+    return np.flip(arc_points_one), arc_points_two
 
 
 def get_closest_arc_point(rover_position, arc):
