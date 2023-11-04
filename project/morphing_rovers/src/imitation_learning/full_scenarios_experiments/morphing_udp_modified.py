@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms.functional import gaussian_blur, rotate
 
-from morphing_rovers.src.imitation_learning.single_scenario_experiments.arc_trajectories import get_closest_arc_point, compute_both_arcs, get_coordinates
+from morphing_rovers.src.imitation_learning.full_scenarios_experiments.arc_trajectories import get_closest_arc_point, compute_both_arcs, get_coordinates
 from morphing_rovers.utils import load_config
 
 # CONSTANTS DEFINING THE PROBLEM
@@ -23,7 +23,7 @@ from morphing_rovers.utils import load_config
 config = load_config("./full_scenarios_experiments/config.yml")
 SCENARIOS_LIST = list(config["radius_dictionary"].keys())
 SCENARIOS_RADIUS = config["radius_dictionary"]
-SCENARIOS_ARC = config["arc_dictionary"]
+SCENARIOS_ARC = 0
 
 
 PATH = os.path.join("..", "..", "data")
@@ -584,13 +584,12 @@ class Rover:
         # Compute the angle_diff to use in order to follow the arc
         if isinstance(rover_position, torch.Tensor):
             rover_position = rover_position.detach().numpy()
-        sample_position = get_closest_arc_point(rover_position, arc)
-        distance_vector = sample_position - rover_position
+        arc_position = get_closest_arc_point(rover_position, arc)
+        distance_vector = arc_position - rover_position
         angle_to_sample = atan2(distance_vector[1], distance_vector[0])
         angle_diff_new = minimal_angle_diff(angle_to_sample, self.angle)
 
-        # print("ANGLE TO SAMPLE", angle_diff, "ANGLE TO ARC POINT", angle_diff_new)
-        ###
+        print("SCENARIO NUMBER", scenario_number, "ANGLE TO SAMPLE", angle_diff, "ANGLE TO ARC POINT", angle_diff_new)
 
         self.training_data.append(([rover_view.numpy(force=True), rover_state.numpy(force=True),
                                     self.latent_state.numpy(force=True)], [self.angle, angle_diff_new]))
@@ -770,12 +769,12 @@ class morphing_rover_UDP:
         position = SCENARIO_POSITIONS[map_number][scenario_number][0:2]
         sample_position = SCENARIO_POSITIONS[map_number][scenario_number][2:4]
 
+        print("ROVER POSITION", position, "SAMPLE POSITION", sample_position)
         # code for the arc
         factor = SCENARIOS_RADIUS[scenario_counter]
-        arc_num = SCENARIOS_ARC[scenario_counter]
+        arc_num = SCENARIOS_ARC
 
-        start, end = get_coordinates(scenario_counter)
-        dist = np.sqrt(np.sum((end - start) ** 2))
+        dist = np.sqrt(np.sum((sample_position.numpy() - position.numpy()) ** 2))
         radius = factor*dist
 
         arcs = compute_both_arcs(position.numpy(), sample_position.numpy(), radius)

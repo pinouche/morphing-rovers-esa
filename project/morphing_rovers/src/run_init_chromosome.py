@@ -52,7 +52,7 @@ def func(i):
 
             fitness = udp.fitness(chromosome, SCENARIOS_LIST)[0]
             udp.pretty(chromosome, SCENARIOS_LIST)
-            udp.plot(chromosome, SCENARIOS_LIST)
+            # udp.plot(chromosome, SCENARIOS_LIST)
 
             print("FITNESS AFTER PATH LEARNING", fitness, "overall speed", np.mean(udp.rover.overall_speed),
                   "average distance from objectives:", np.mean(network_trainer.udp.rover.overall_distance))

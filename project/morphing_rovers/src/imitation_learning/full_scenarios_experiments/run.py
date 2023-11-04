@@ -6,6 +6,7 @@ import torch
 from morphing_rovers.utils import load_config
 from morphing_rovers.morphing_udp import morphing_rover_UDP, MAX_TIME
 from morphing_rovers.src.imitation_learning.full_scenarios_experiments.optimization import OptimizeNetworkSupervised
+# from morphing_rovers.src.neural_network_supervised.optimization import OptimizeNetworkSupervised
 from morphing_rovers.src.utils import update_chromosome_with_mask, get_chromosome_from_path
 
 N_RUNS = 100
@@ -24,11 +25,11 @@ def func(i):
 
     udp = morphing_rover_UDP()
 
-    masks_tensors, chromosome = get_chromosome_from_path(PATH_CHROMOSOME, False)
+    masks_tensors, chromosome = get_chromosome_from_path(PATH_CHROMOSOME, True)
     training_data = []
     for i in range(N_RUNS):
         print(f"Running for run number {i}")
-        for n_iter in range(MAX_TIME, MAX_TIME + 1):
+        for n_iter in range(1, MAX_TIME + 1):
             print(f"Optimizing network for the {n_iter} first rover's steps")
 
             network_trainer = OptimizeNetworkSupervised(options, chromosome, training_data)
@@ -38,6 +39,14 @@ def func(i):
             chromosome = update_chromosome_with_mask(masks_tensors,
                                                      network_trainer.udp.rover.Control.chromosome,
                                                      always_switch=True)
+
+            # network_trainer = OptimizeNetworkSupervised(options, chromosome)
+            # network_trainer.train(n_iter, train=True)
+            # path_data = network_trainer.udp.rover.cluster_data
+            #
+            # chromosome = update_chromosome_with_mask(masks_tensors,
+            #                                          network_trainer.udp.rover.Control.chromosome,
+            #                                          always_switch=True)
 
             score, _ = udp.pretty(chromosome, SCENARIOS_LIST)
             # udp.plot(chromosome, SCENARIOS_LIST)
