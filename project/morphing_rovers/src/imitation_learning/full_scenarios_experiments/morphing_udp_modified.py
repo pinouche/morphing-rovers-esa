@@ -769,7 +769,7 @@ class morphing_rover_UDP:
         position = SCENARIO_POSITIONS[map_number][scenario_number][0:2]
         sample_position = SCENARIO_POSITIONS[map_number][scenario_number][2:4]
 
-        print("ROVER POSITION", position, "SAMPLE POSITION", sample_position)
+        # print("ROVER POSITION", position, "SAMPLE POSITION", sample_position)
         # code for the arc
         factor = SCENARIOS_RADIUS[scenario_counter]
         arc_num = SCENARIOS_ARC
