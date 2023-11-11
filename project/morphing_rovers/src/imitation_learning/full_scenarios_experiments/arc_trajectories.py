@@ -49,7 +49,6 @@ def compute_both_arcs(q, p, radius):
     _, _, arc_points_two = get_arc(p, q, c2, radius)
 
     if start_one > end_one:
-        print("True")
         start_one, end_one, arc_points_one = get_arc(q, p, c1, radius, True)
         arc_points_one = np.flip(arc_points_one, axis=0)
 
@@ -61,11 +60,11 @@ def get_closest_arc_point(rover_position, arc):
     rover_position = np.flip(np.expand_dims(rover_position, 0), axis=0)
     dist = np.sqrt(np.sum((rover_position - arc)**2, axis=1))
     closest_point = np.argmin(dist)
-    if len(arc) - closest_point > 1:
-        closest_point += 1
+    if closest_point > 5:
+        closest_point -= 5
     closest_point = arc[closest_point, :]
-    closest_point = arc[0, :]
+    # closest_point = arc[0, :]
     # if condition:
     #     closest_point = np.flip(closest_point)
-    print("CLOSEST POINT", closest_point)
+    # print("CLOSEST POINT", closest_point)
     return closest_point
