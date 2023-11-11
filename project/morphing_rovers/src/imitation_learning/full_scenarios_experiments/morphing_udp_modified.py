@@ -589,7 +589,7 @@ class Rover:
         angle_to_sample = atan2(distance_vector[1], distance_vector[0])
         angle_diff_new = minimal_angle_diff(angle_to_sample, self.angle)
 
-        print("SCENARIO NUMBER", scenario_number, "ANGLE TO SAMPLE", angle_diff, "ANGLE TO ARC POINT", angle_diff_new)
+        # print("SCENARIO NUMBER", scenario_number, "ANGLE TO SAMPLE", angle_diff, "ANGLE TO ARC POINT", angle_diff_new)
 
         self.training_data.append(([rover_view.numpy(force=True), rover_state.numpy(force=True),
                                     self.latent_state.numpy(force=True)], [self.angle, angle_diff_new]))
@@ -777,8 +777,7 @@ class morphing_rover_UDP:
         dist = np.sqrt(np.sum((sample_position.numpy() - position.numpy()) ** 2))
         radius = factor*dist
 
-        arcs = compute_both_arcs(position.numpy(), sample_position.numpy(), radius)
-        arc = arcs[arc_num]
+        arc_one, arc_two = compute_both_arcs(position.numpy(), sample_position.numpy(), radius)
 
         xmin = MIN_BORDER_DISTANCE
         ymin = MIN_BORDER_DISTANCE
@@ -793,7 +792,7 @@ class morphing_rover_UDP:
         for timestep in range(0, num_steps_to_run):
             rover_view, mode_view = self.env.extract_local_view(self.rover.position, self.rover.angle, map_number)
             self.rover.update_rover_state(rover_view, mode_view, distance_vector, original_distance,
-                                          self.scenario_number, self.rover.position, arc)
+                                          self.scenario_number, self.rover.position, arc_one)
             distance_vector = sample_position - self.rover.position
             current_distance = distance_vector.norm()
 

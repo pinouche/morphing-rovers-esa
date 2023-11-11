@@ -33,8 +33,9 @@ def get_arc(p, q, c, r, counter_arc=False, num_points=200):
     start = 2 * math.atan((p[1] - c[1]) / (p[0] - c[0] + r)) + factor
     end = 2 * math.atan((q[1] - c[1]) / (q[0] - c[0] + r))
 
+    step_size = (end - start) / num_points
     arc_points = np.array([c + r * np.array([np.cos(theta), np.sin(theta)]) for theta in
-                           np.arange(start, end, ((end - start) / num_points))])
+                           np.arange(start, end, step_size)])
 
     return start, end, arc_points
 
@@ -48,21 +49,23 @@ def compute_both_arcs(q, p, radius):
     _, _, arc_points_two = get_arc(p, q, c2, radius)
 
     if start_one > end_one:
+        print("True")
         start_one, end_one, arc_points_one = get_arc(q, p, c1, radius, True)
+        arc_points_one = np.flip(arc_points_one, axis=0)
 
-    return np.flip(arc_points_one), arc_points_two
+    return arc_points_one, arc_points_two
 
 
 def get_closest_arc_point(rover_position, arc):
 
     rover_position = np.flip(np.expand_dims(rover_position, 0), axis=0)
     dist = np.sqrt(np.sum((rover_position - arc)**2, axis=1))
-    # print("DIST", dist)
     closest_point = np.argmin(dist)
-    #  print(len(arc) - closest_point)
     if len(arc) - closest_point > 1:
         closest_point += 1
     closest_point = arc[closest_point, :]
-    closest_point = arc[-1, :]
-    print("CLOSEST POINT", np.flip(closest_point))
-    return np.flip(closest_point)
+    closest_point = arc[0, :]
+    # if condition:
+    #     closest_point = np.flip(closest_point)
+    print("CLOSEST POINT", closest_point)
+    return closest_point
