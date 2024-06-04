@@ -23,7 +23,7 @@ learning_rate_supervised_learning: 0.002 # 0.002 normally
 es_sigma: 0.01
 es_lr: 0.0001
 es_pop_size: 100
-es_epochs: 1
+es_epochs: 2
 n_params_to_perturb: 19126
 
 # session name
