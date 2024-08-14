@@ -7,13 +7,11 @@ Part of the solution that finished 2nd overall (team ML Actonauts).
 ## Set-up
 
 * Use Poetry to manage the dependencies 
-* Use a Python 3.10 (or above) virtual environment (it's recommended to use conda to create the environment)
-* Activate the virtual environment
+* Use a Python 3.10 (or above) 
 * Install the dependencies using Poetry
 
 
 ```bash
-conda create -n esa-morphing-rovers python=3.10
-conda activate esa-morphing-rovers
 poetry install
+poetry shell
 ```
