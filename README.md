@@ -15,3 +15,6 @@ Part of the solution that finished 2nd overall (team ML Actonauts).
 poetry install
 poetry shell
 ```
+## Example of Rovers' final masks and trajectories for the 30 scenarios:
+
+![ESA Morphing Rovers](rovers_masks.png/images/rover.png)
