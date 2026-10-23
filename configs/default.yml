@@ -1,0 +1,55 @@
+# End-to-end optimisation of the morphing rovers:
+#   1. masks: cluster the terrain patches met along the start-to-sample lines and fit one mask per cluster,
+#   2. imitation: train the controller to steer like an expert heading for the sample (or following an arc).
+# Run with `uv run morphing-rovers run -c configs/default.yml`, override values with `-s key.subkey=value`.
+# Relative paths are relative to the working directory.
+
+seed: 0
+output_dir: runs/default  # config.yml, masks.npy, history.csv, best_chromosome.npy, submission.json
+
+masks:
+  from_chromosome: null  # path to a chromosome whose masks to reuse, skipping this whole stage
+  dataset:
+    samples_per_scenario: 1000  # mode views sampled along each start-to-sample line (30 lines)
+    val_fraction: 0.2  # validation split for the autoencoder training
+  autoencoder:
+    checkpoint: artifacts/autoencoder.pt  # loaded if it exists, else trained and saved there (null: <output_dir>/autoencoder.pt)
+    latent_dim: 50
+    hidden_dim: 256
+    learning_rate: 1.5e-4
+    weight_decay: 0.0
+    batch_size: 512
+    n_epochs: 1500
+  clustering:
+    features: autoencoder  # autoencoder: PCA of the latent space | velocity: PCA of the velocity on 300 reference views
+    algorithm: kmeans  # kmeans | gmm | agg (agg is quadratic in memory: lower samples_per_scenario)
+    n_clusters: 4  # one mask per cluster for the 4 largest ones; with fewer clusters the first mask is repeated
+    n_components: 3  # PCA components kept, weighted by their explained variance ratio
+    distance_threshold: null  # agg only: merge threshold instead of a fixed number of clusters
+  optimization:  # Adam ascent on the mean velocity of each mask over the views of its cluster
+    n_iter: 250
+    learning_rate: 0.05
+    refinement_rounds: 10  # reassign each view to its fastest mask and refit the masks (0: masks of the clusters)
+
+imitation:
+  controller_init: example  # example (network of the challenge example) | path to a chromosome whose network to start from
+  scenarios: null  # scenario indices (0-29) to train and evaluate on; null: all 30
+  n_runs: 100  # each run sweeps the horizon from horizon_start to horizon_stop
+  horizon_start: 1  # number of simulation steps per scenario recorded as training samples
+  horizon_stop: 500
+  horizon_step: 1
+  n_iter: 100  # full-batch Adam steps on the samples of each horizon
+  learning_rate: 0.002
+  buffer_size: null  # null: fit on the latest rollout only | N: fit on the last N samples accumulated
+  radius_factors: {}  # {scenario: factor}: follow an arc of radius factor x start-sample distance (>= 0.5),
+                      # e.g. {3: 2.0, 5: 1.0}; other scenarios head straight for the sample
+  arc_points: 200  # waypoints per arc
+  lookahead: 5  # the expert aims this many waypoints past the closest one
+
+sweep:  # `morphing-rovers sweep`: imitation learning on each scenario alone, for each radius factor
+  scenarios: [16, 19]
+  radius_factors: [null, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5]  # null: straight line
+
+submission:
+  name: morphing-rovers
+  description: Masks from autoencoder clustering, controller from imitation learning.
