@@ -30,13 +30,21 @@ def test_arc_geometry(factor):
     assert deviation_from_chord(points).max() == pytest.approx(sagitta, rel=1e-3)
 
 
+@pytest.mark.parametrize("factor", [0.5, 1.0, 2.0, 5.0])
+def test_a_negative_factor_mirrors_the_arc_to_the_right(factor):
+    left, right = arc_points(START, END, factor, 200), arc_points(START, END, -factor, 200)
+    np.testing.assert_allclose(right[[0, -1]], [START, END], atol=1e-9)
+    np.testing.assert_allclose(deviation_from_chord(right), -deviation_from_chord(left), atol=1e-9)
+
+
 def test_large_radius_is_almost_straight():
     assert deviation_from_chord(arc_points(START, END, 50.0, 200)).max() < 0.01 * LENGTH
 
 
-def test_radius_too_small():
+@pytest.mark.parametrize("factor", [0.4, -0.4])
+def test_radius_too_small(factor):
     with pytest.raises(ValueError, match="at least 0.5"):
-        arc_points(START, END, 0.4, 200)
+        arc_points(START, END, factor, 200)
 
 
 def test_straight_expert_heads_for_the_sample():
@@ -44,6 +52,13 @@ def test_straight_expert_heads_for_the_sample():
     heading = atan2(*(END - START)[::-1])
     assert expert.steering(START, heading - 0.1) == pytest.approx(0.1)
     assert expert.steering(START, heading + 3.0) == -MAX_DA
+
+
+def test_heading_offset_is_to_the_left_of_the_aim_point():
+    expert = Expert(END, lookahead=5, heading_offset=10.0)
+    heading = atan2(*(END - START)[::-1])
+    assert expert.steering(START, heading) == pytest.approx(np.deg2rad(10.0))
+    assert make_expert(0, None, 200, 5, -4.0).heading_offset == -4.0
 
 
 def test_expert_looks_ahead_along_the_waypoints():

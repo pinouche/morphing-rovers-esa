@@ -823,7 +823,7 @@ class morphing_rover_UDP:
             scenario_number: index for which positions the scenario will use
             detailed_results: optional Record storing the trajectory
             on_step: optional callable, called at every timestep right before the rover state is updated as
-                     on_step(rover, rover_view, distance_vector, original_distance)
+                     on_step(rover, rover_view, mode_view, distance_vector, original_distance)
         Returns:
             d: the normalised distance of the rover from the target (normalised with original distance)
             T: the normalised time taken for the scenario to complete (normalised with optimal time, i.e.,
@@ -854,7 +854,7 @@ class morphing_rover_UDP:
         for timestep in range(0, SIM_TIME_STEPS):
             rover_view, mode_view = self.env.extract_local_view(rover.position, rover.angle, map_number)
             if on_step is not None:
-                on_step(rover, rover_view, distance_vector, original_distance)
+                on_step(rover, rover_view, mode_view, distance_vector, original_distance)
             rover.update_rover_state(rover_view, mode_view, distance_vector, original_distance)
             distance_vector = sample_position - rover.position
 

@@ -109,6 +109,25 @@ def fit_mask(views: torch.Tensor, mask: torch.Tensor, cfg: MaskOptimizationConfi
     return mask.detach()
 
 
+def fit_masks_to_schedule(
+    masks: np.ndarray, views: torch.Tensor, modes: torch.Tensor, weights: torch.Tensor, n_iter: int, learning_rate: float
+) -> np.ndarray:
+    """Adam descent on the time spent on `views`, each driven in its mode of `modes`.
+
+    The time to drive over a stretch of terrain is proportional to 1 / velocity, hence the objective: unlike the
+    mean velocity, it is dominated by the terrain where the rover crawls. `weights` give the share of each view in
+    the fitness.
+    """
+    masks = torch.tensor(masks, dtype=torch.float32, requires_grad=True)
+    optimiser = torch.optim.Adam([masks], learning_rate)
+    for _ in range(n_iter):
+        loss = (weights / velocity(masks[modes], views)).sum()
+        optimiser.zero_grad()
+        loss.backward()
+        optimiser.step()
+    return masks.detach().numpy()
+
+
 def optimize_masks(views: np.ndarray, labels: np.ndarray, cfg: MaskOptimizationConfig, seed: int) -> np.ndarray:
     """One mask per cluster for the (up to 4) largest clusters; missing modes start as copies of the first mask.
 

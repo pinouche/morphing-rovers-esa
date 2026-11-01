@@ -11,16 +11,19 @@ from morphing_rovers.submission import CHALLENGE_ID, PROBLEM_ID, write_submissio
 def tiny_run_overrides(tmp_path, artifacts) -> list[str]:
     overrides = [f"output_dir={tmp_path}", f"masks.autoencoder.checkpoint={artifacts / 'autoencoder.pt'}",
                  "masks.dataset.samples_per_scenario=2", "masks.optimization.n_iter=5",
-                 "masks.optimization.refinement_rounds=1", "imitation.scenarios=[0]", "imitation.n_runs=1",
-                 "imitation.horizon_stop=2", "imitation.n_iter=2"]
+                 "masks.optimization.refinement_rounds=1", "masks.schedule.rounds=1", "masks.schedule.n_iter=2",
+                 "imitation.scenarios=[19]", "imitation.n_runs=1", "imitation.horizon_stop=2", "imitation.n_iter=2",
+                 "offsets.rounds=1", "offsets.candidates=[-4.0, 0.0, 4.0]", "switching.rounds=1", "switching.n_iter=2",
+                 "switching.batch_size=8"]
     return [arg for override in overrides for arg in ("-s", override)]
 
 
 @pytest.mark.slow
-def test_run(tmp_path, artifacts, capsys):
-    main(["run", *tiny_run_overrides(tmp_path, artifacts)])
+@pytest.mark.parametrize(("steering", "history"), [("wired", "switching.csv"), ("learned", "history.csv")])
+def test_run(tmp_path, artifacts, capsys, steering, history):
+    main(["run", *tiny_run_overrides(tmp_path, artifacts), "-s", f"steering={steering}"])
     assert "Avg. fitness" in capsys.readouterr().out
-    for name in ("config.yml", "masks.npy", "history.csv", "best_chromosome.npy", "submission.json"):
+    for name in ("config.yml", "masks.npy", "heading_offsets.json", history, "best_chromosome.npy", "submission.json"):
         assert (tmp_path / name).exists()
     masks = np.load(tmp_path / "masks.npy")
     np.testing.assert_array_equal(load_chromosome(tmp_path / "best_chromosome.npy")[:484], masks.ravel())
@@ -34,6 +37,16 @@ def test_sweep(tmp_path, artifacts):
     with open(tmp_path / "sweep.json") as f:
         results = json.load(f)
     assert list(results) == ["19"] and list(results["19"]) == ["straight", "2.0"]
+
+
+def test_a_wired_network_cannot_follow_arcs(tmp_path, artifacts):
+    with pytest.raises(ValueError, match="arcs"):
+        main(["run", *tiny_run_overrides(tmp_path, artifacts), "-s", "imitation.radius_factors={19: 2.0}"])
+
+
+def test_unknown_steering(tmp_path, artifacts):
+    with pytest.raises(ValueError, match="steering"):
+        main(["run", *tiny_run_overrides(tmp_path, artifacts), "-s", "steering=magic"])
 
 
 def test_evaluate(artifacts, capsys):

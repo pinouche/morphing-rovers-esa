@@ -15,8 +15,8 @@ from morphing_rovers.udp import morphing_rover_UDP
 logger = logging.getLogger("morphing_rovers")
 
 OPTIMISATIONS = {
-    "run": (pipeline.run, "end-to-end optimisation: masks by terrain clustering, controller by imitation learning"),
-    "sweep": (pipeline.sweep, "imitation learning on single scenarios to pick their arc radius factor"),
+    "run": (pipeline.run, "end-to-end optimisation of the masks, then the controller"),
+    "sweep": (pipeline.sweep, "fitness of single scenarios on each arc, to pick their radius factor"),
 }
 
 
