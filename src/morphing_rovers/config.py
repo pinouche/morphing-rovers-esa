@@ -43,12 +43,20 @@ class MaskOptimizationConfig:
 
 
 @dataclass
+class ScheduleConfig:
+    rounds: int = 30
+    n_iter: int = 40
+    learning_rate: float = 0.01
+
+
+@dataclass
 class MasksConfig:
     from_chromosome: str | None = None
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
     autoencoder: AutoencoderConfig = field(default_factory=AutoencoderConfig)
     clustering: ClusteringConfig = field(default_factory=ClusteringConfig)
     optimization: MaskOptimizationConfig = field(default_factory=MaskOptimizationConfig)
+    schedule: ScheduleConfig = field(default_factory=ScheduleConfig)
 
 
 @dataclass
@@ -62,29 +70,53 @@ class ImitationConfig:
     n_iter: int = 100
     learning_rate: float = 0.002
     buffer_size: int | None = None
+    batch_size: int | None = None
     radius_factors: dict[int, float] = field(default_factory=dict)
+    heading_offsets: dict[int, float] = field(default_factory=dict)
     arc_points: int = 200
     lookahead: int = 5
 
 
 @dataclass
+class OffsetsConfig:
+    rounds: int = 2
+    candidates: list[float] = field(default_factory=lambda: [float(offset) for offset in range(-16, 17)])
+
+
+@dataclass
+class SwitchingConfig:
+    rounds: int = 24
+    oracle_shares: list[float] = field(default_factory=lambda: [1.0, 0.7, 0.4])
+    n_iter: int = 1500
+    batch_size: int = 256
+    learning_rate: float = 1e-3
+    max_weight: float = 5.0
+    steering_weight: float = 10.0
+    steering_buffer: int = 50000
+
+
+@dataclass
 class SweepConfig:
-    scenarios: list[int] = field(default_factory=lambda: [16, 19])
+    scenarios: list[int] | None = field(default_factory=lambda: [16, 19])
     radius_factors: list[float | None] = field(default_factory=lambda: [None] + [1 + 0.5 * i for i in range(18)])
 
 
 @dataclass
 class SubmissionConfig:
     name: str = "morphing-rovers"
-    description: str = "Masks from autoencoder clustering, controller from imitation learning."
+    description: str = ("Masks refined on the fastest switching schedule, wired steering with a heading offset per "
+                        "scenario, switching by imitation learning.")
 
 
 @dataclass
 class Config:
     seed: int = 0
     output_dir: str = "runs/default"
+    steering: str = "wired"
     masks: MasksConfig = field(default_factory=MasksConfig)
     imitation: ImitationConfig = field(default_factory=ImitationConfig)
+    offsets: OffsetsConfig = field(default_factory=OffsetsConfig)
+    switching: SwitchingConfig = field(default_factory=SwitchingConfig)
     sweep: SweepConfig = field(default_factory=SweepConfig)
     submission: SubmissionConfig = field(default_factory=SubmissionConfig)
 

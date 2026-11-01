@@ -1,11 +1,15 @@
 # End-to-end optimisation of the morphing rovers:
 #   1. masks: cluster the terrain patches met along the start-to-sample lines and fit one mask per cluster,
-#   2. imitation: train the controller to steer like an expert heading for the sample (or following an arc).
+#   2. routes: alternately pick the fastest heading offset of each scenario and refine the masks on these routes,
+#      under the fastest switching schedule,
+#   3. steering: wired into the network, or learned by imitation of the experts,
+#   4. switching: train the network to imitate the fastest schedule.
 # Run with `uv run morphing-rovers run -c configs/default.yml`, override values with `-s key.subkey=value`.
 # Relative paths are relative to the working directory.
 
 seed: 0
-output_dir: runs/default  # config.yml, masks.npy, history.csv, best_chromosome.npy, submission.json
+output_dir: runs/default  # config.yml, masks.npy, heading_offsets.json, switching.csv, best_chromosome.npy, submission.json
+steering: wired  # wired: exact heading for the sample, built into the network | learned: `imitation` section below
 
 masks:
   from_chromosome: null  # path to a chromosome whose masks to reuse, skipping this whole stage
@@ -30,26 +34,47 @@ masks:
     n_iter: 250
     learning_rate: 0.05
     refinement_rounds: 10  # reassign each view to its fastest mask and refit the masks (0: masks of the clusters)
+  schedule:  # Adam descent on the time along the routes, each view being driven in its mode of the fastest schedule
+    rounds: 30  # alternations of schedule and fit (0: keep the masks)
+    n_iter: 40
+    learning_rate: 0.01
 
-imitation:
+imitation:  # the experts of `scenarios` and `radius_factors` define the routes of every steering; the rest is for `steering: learned`
   controller_init: example  # example (network of the challenge example) | path to a chromosome whose network to start from
   scenarios: null  # scenario indices (0-29) to train and evaluate on; null: all 30
-  n_runs: 100  # each run sweeps the horizon from horizon_start to horizon_stop
+  n_runs: 100  # each run sweeps the horizon from horizon_start to horizon_stop (0: keep the network of controller_init)
   horizon_start: 1  # number of simulation steps per scenario recorded as training samples
   horizon_stop: 500
   horizon_step: 1
   n_iter: 100  # full-batch Adam steps on the samples of each horizon
   learning_rate: 0.002
   buffer_size: null  # null: fit on the latest rollout only | N: fit on the last N samples accumulated
-  radius_factors: {}  # {scenario: factor}: follow an arc of radius factor x start-sample distance (>= 0.5),
-                      # e.g. {3: 2.0, 5: 1.0}; other scenarios head straight for the sample
+  batch_size: null  # null: full-batch Adam steps | N: random minibatch of N samples per step
+  radius_factors: {}  # {scenario: factor}: follow an arc of radius |factor| x start-sample distance (>= 0.5), bulging
+                      # left, or right if negative, e.g. {3: 2.0, 5: -1.0}; other scenarios head straight for the sample.
+                      # Needs `steering: learned`: a wired network cannot follow arcs
+  heading_offsets: {}  # {scenario: degrees}: keep this angle from the aim point (left if positive), starting point of the search
   arc_points: 200  # waypoints per arc
   lookahead: 5  # the expert aims this many waypoints past the closest one
 
-sweep:  # `morphing-rovers sweep`: imitation learning on each scenario alone, for each radius factor
-  scenarios: [16, 19]
+offsets:  # search for the heading offset of each scenario, which a wired network encodes (up to 30 degrees)
+  rounds: 2  # alternations of offset search and mask refinement (0: keep imitation.heading_offsets)
+  candidates: [-16.0, -15.0, -14.0, -13.0, -12.0, -11.0, -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]  # degrees
+
+switching:  # imitation of the fastest schedule by the switch output
+  rounds: 24  # rollouts, each followed by a fit on all the decisions recorded so far
+  oracle_shares: [1.0, 0.7, 0.4]  # share of the decisions taken by the oracle in the first rounds, then 0
+  n_iter: 1500  # Adam steps per round
+  batch_size: 256
+  learning_rate: 1.0e-3
+  max_weight: 5.0  # cap on the weight of a decision, the steps at stake
+  steering_weight: 10.0  # `steering: learned` only: weight of the steering regression
+  steering_buffer: 50000  # `steering: learned` only: last steering samples kept
+
+sweep:  # `morphing-rovers sweep`: fitness of each scenario on each arc, driven by the switching oracle
+  scenarios: [16, 19]  # null: all 30
   radius_factors: [null, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5]  # null: straight line
 
 submission:
   name: morphing-rovers
-  description: Masks from autoencoder clustering, controller from imitation learning.
+  description: Masks refined on the fastest switching schedule, wired steering with a heading offset per scenario, switching by imitation learning.
